@@ -33,6 +33,8 @@ public class Design {
 	private int storelatency;
 	private int branchlatency;
 	
+	private int stall;
+	
 	private int RSfreeSlots;
 	
 	private JLabel lblIftxt;
@@ -50,6 +52,11 @@ public class Design {
 	private ArrayList<JLabel> reslabelmaker = new ArrayList<JLabel> ();
 	private ArrayList<JLabel> busylabelmaker = new ArrayList<JLabel> ();
 	private ArrayList<JLabel> validlabelmaker = new ArrayList<JLabel> ();
+	
+	private ArrayList<Integer> resarray = new ArrayList<Integer>();
+	private ArrayList<Integer> busyarray = new ArrayList<Integer>();
+	private ArrayList<Integer> validarray = new ArrayList<Integer>();
+	
 	private JLabel lblReservationStation;
 	
 	private int InstructionCount;
@@ -112,7 +119,9 @@ public class Design {
 		branchlatency=Integer.parseInt(values.get(8)) ;
 		
 		RSfreeSlots=entrysize;
-				
+		
+		
+		stall=0;
 		initialize();
 	}
 
@@ -126,13 +135,18 @@ public class Design {
 		Instruction_Fetch(stagepc.get(0));
 		Instruction_Decode(stagepc.get(1));
 		Read(stagepc.get(2));
-		Reservation_Station(stagepc.get(3));
+		Reservation_Station(stagepc.get(2));
 		Complete(stagepc.get(4));
 		Retire(stagepc.get(5));
 	}
 	
 	
 	private void myfunc(){
+		
+		for(int i=0;i<entrysize;i++){
+			busyarray.add(0);
+			busylabelmaker.get(i).setText(" 0 ");
+		}
 		
 		for(int i=0;i<6;i++){
 			stagepc.add(-1);
@@ -147,16 +161,28 @@ public class Design {
 	
 	private void Update_the_pc (){
 		//if regstation is full wait else send
-		
-		stagepc.remove(stagepc.size()-1);
-		if(pc<InstructionCount){
-			stagepc.add(0,pc);
-			pc=pc+instpercycle;
+		if(stall==0){
+			stagepc.remove(stagepc.size()-1);
+			if(pc<InstructionCount){
+				stagepc.add(0,pc);
+				pc=pc+instpercycle;
+			}
+			else{
+				stagepc.add(0,-1);
+			}	
 		}
 		else{
-			stagepc.add(0,-1);
-		}	
+			
+		}
+		
+		
+		
+		
+		
+		
+		
 		System.out.println(stagepc);
+		System.out.println("free slots =========>"+RSfreeSlots);
 	}
 	
 	
@@ -196,7 +222,10 @@ public class Design {
 		System.out.println(temp);
 		lblIdtxt.setText(temp);
 	}
+
+	
 	private void Read(int curpc){
+		System.out.println(pc);
 		if(curpc==-1){
 			lblRdtxt.setText("");
 		}else{
@@ -215,6 +244,7 @@ public class Design {
 			if(RSfreeSlots>=instpercycle){
 				lblRdtxt.setText("Dispatching "+temp);
 			}else{
+				stall=1;
 				int numb=instpercycle-RSfreeSlots;
 				String[] array = temp.split("    ");
 				String newtemp="";
@@ -225,16 +255,65 @@ public class Design {
 						newtemp=newtemp+array[i];
 					}			    	
 			    }
-			    lblRdtxt.setText("Dispatching "+newtemp);
-			    pc=pc-instpercycle+numb;
+			    lblRdtxt.setText("Buffer:"+temp+"Dispatching "+newtemp);    
+			    
+			    
+			   
 			}
 			
 		}
 	}
 	private void Reservation_Station(int curpc){
-		/*while(reserveinst.size()<entrysize){
+		System.out.println("now");
+		int tempfreeslot = RSfreeSlots;
+		
+		if(curpc==-1){}
+		else{
+			int mynumb;
 			
-		}*/
+			if(RSfreeSlots>instpercycle){
+				System.out.println("shir");
+				mynumb=instpercycle;
+			}else{
+				mynumb=RSfreeSlots;
+			}
+			System.out.println(RSfreeSlots);
+			ArrayList<String> smalllist = new ArrayList<String>();
+			System.out.println("-------------------------------"+DecodeInstSet.get(4));
+			for(int i=0;i<mynumb;i++){
+				smalllist.add(DecodeInstSet.get(curpc+i));
+				System.out.println(i);
+			}
+			System.out.println(smalllist);
+			for(int i=0;i<entrysize;i++){
+				if(smalllist.size()>0){
+					if(busyarray.get(i)==0){
+						reslabelmaker.get(i).setText(smalllist.get(0));
+						smalllist.remove(0);
+						busyarray.set(i, 1);
+						busylabelmaker.get(i).setText("   1");
+					}
+				}
+			}
+			System.out.println(busyarray);
+			
+			int simpletemp=0;
+			for(int i=0;i<busyarray.size();i++){
+				if(busyarray.get(i)== 0){
+					simpletemp++;
+				}
+			}
+			RSfreeSlots=simpletemp;
+			
+			if(stagepc.get(0)>0&& stall==1)
+				stagepc.set(0, stagepc.get(0)+tempfreeslot);	
+		    if(stagepc.get(1)>0&& stall==1)
+		    	stagepc.set(1, stagepc.get(1)+tempfreeslot);
+		    if(stagepc.get(2)>0&& stall==1)
+		    	stagepc.set(2, stagepc.get(2)+tempfreeslot);
+		   System.out.println(stagepc);
+	
+		}
 	}
 	private void Complete(int pc){}
 	private void Retire(int pc){}
