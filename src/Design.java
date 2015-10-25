@@ -396,6 +396,70 @@ public class Design {
 			return -1;
 		}
 	}
+	private void set_archregisters(int opcode,int destr,String dest1,String dest2){
+		String s = ArchReg.get(Integer.parseInt(dest1));
+		String parts[] = s.split(" ");
+		if((opcode == 0)||(opcode == 1)||(opcode == 2)||(opcode == 3)){
+			ArchReg.set(Integer.parseInt(dest1),stringarf("1",Integer.toString(destr),parts[2]));
+		}
+		else if(opcode == 4){
+			ArchReg.set(Integer.parseInt(dest2),stringarf("1",Integer.toString(destr),parts[2]));
+		}
+		else{}
+	}
+	private int check_ifBusy(String s){
+		String parts[] = s.split(" ");
+		if(parts[0].equals("1")){
+			return 1;
+		}
+		else{
+			return 0;
+		}
+	}
+	private String get_tag(String s){
+		String parts[] = s.split(" ");
+		return parts[1];
+	}
+	private String get_data(String s){
+		String parts[] = s.split(" ");
+		return parts[2];
+	}
+	private void set_reservstation(int opcode,int index,String s1,String s2){
+		if((opcode == 0)||(opcode == 1)||(opcode == 2)){
+			if(s2.substring(0,1).equals("&")){
+				String s = ArchReg.get(Integer.parseInt(s1));
+				int flag = check_ifBusy(s);
+				if(flag == 1){
+					String c = get_tag(s);
+					reserveinst.set(index,stringrs("1",Integer.toString(opcode),"&",c,"&","-1",s2.substring(1),"0"));
+				}
+				else{
+					String c = get_data(s);
+					reserveinst.set(index,stringrs("1",Integer.toString(opcode),"&","-1",c,"-1",s2.substring(1),"0"));
+				}
+			}
+			else{
+				String S1 = ArchReg.get(Integer.parseInt(s1));
+				String S2 = ArchReg.get(Integer.parseInt(s2));
+				int flag1 = check_ifBusy(S1);
+				int flag2 = check_ifBusy(S2);
+				if((flag1 == 1)&&(flag2 == 0)){
+					String c1 = get_tag(S1);
+					String c2 = get_data(S2);
+					reserveinst.set(index,stringrs("1",Integer.toString(opcode),"&",c1,"&","-1",c2,"0"));
+				}
+				else if((flag1 == 0)&&(flag2 == 1)){
+					String c1 = get_data(S1);
+					String c2 = get_tag(S2);
+					reserveinst.set(index,stringrs("1",Integer.toString(opcode),"&","-1",c1,c2,"&","0"));
+				}
+				else if((flag1 == 1)&&(flag2 == 1)){
+					String c1 = get_data(S1);
+					String c2 = get_tag(S2);
+				}
+			}
+		}
+	}
 	private void Reservation_Station(int curpc){
 		System.out.println("now");
 		int tempfreeslot = RSfreeSlots;
@@ -425,12 +489,20 @@ public class Design {
 			for (int i = 0; i < count; i++) {
 				System.out.println(smalllist.get(i));
 				String s = smalllist.get(i);
-				String[] parts = s.split(" ");
+				String[] parts1 = s.split(" ");
 				//System.out.println(parts[0]);
-				int opcode = getnumberop(parts[0]);
+				int opcode = getnumberop(parts1[0]);
 				//System.out.println( getnumberop(parts[0]));
 				System.out.println("00000000000000");
 				System.out.println(GetRegNumbers(s));
+				String[] parts2 = GetRegNumbers(s).split(" ");
+				System.out.println(parts2[0] + " " + parts2[1] + " " + parts2[2]);
+				set_reservstation(opcode,curpc+1,parts2[1],parts2[2]);
+				set_archregisters(opcode,curpc+i,parts2[0],parts2[1]);
+				System.out.println("Changed Arch registers");
+				for (int j = 0; j < 8; j++) {
+					System.out.println(ArchReg.get(j));
+				}
 				//reserveinst.set(curpc+i, stringrs("1","-1","-1","-1","-1","-1","-1","0"));
 			}
 			System.out.println("****************");
