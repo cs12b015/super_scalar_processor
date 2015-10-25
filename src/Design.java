@@ -70,12 +70,19 @@ public class Design {
 	private ArrayList<JLabel> busylabelmaker = new ArrayList<JLabel> ();
 	private ArrayList<JLabel> validlabelmaker = new ArrayList<JLabel> ();
 	private ArrayList<JLabel> registerlabelmaker = new ArrayList<JLabel> ();
-	
 	private ArrayList<Integer> resarray = new ArrayList<Integer>();
 	private ArrayList<Integer> busyarray = new ArrayList<Integer>();
 	private ArrayList<Integer> validarray = new ArrayList<Integer>();
-	
 	private JLabel lblReservationStation;
+	
+	private HashMap<Integer,String> reorderbuffer=new HashMap<Integer,String>();
+	
+	private int addresult;
+	private int mulresult;
+	private int ldresult;
+	private int sdresult;
+	private int brresult;
+	
 	
 	private int InstructionCount;
 	private ArrayList<String> InstructionSet  = new ArrayList <String>();
@@ -85,6 +92,8 @@ public class Design {
 	private ArrayList <Integer> stagepc = new ArrayList<Integer>();
 	
 	private ArrayList<Integer> completeinst = new ArrayList<Integer>();
+	private ArrayList<Integer> datacache = new ArrayList<Integer>();
+	private ArrayList<String> storebuf = new ArrayList<String>();
 	
 	private int cycle;
 	private HashMap<Integer,Integer> opcodecountermap = new HashMap<Integer,Integer>();
@@ -148,10 +157,10 @@ public class Design {
 		br.close();
 		for (int i = 0; i < 8; i++) {
 			System.out.print(i+" ");
-        	//System.out.println(ArchReg.get(i));
+        	////System.out.println(ArchReg.get(i));
 		}
 		
-		//System.out.println(DecodeInstSet);
+		////System.out.println(DecodeInstSet);
 		
 		instpercycle= Integer.parseInt(values.get(0)) ;
 		entrysize=Integer.parseInt(values.get(1)) ;
@@ -191,15 +200,20 @@ public class Design {
 		for (int i = 0; i < entrysize; i++) {
 			//reserveinst.add(stringrs("0","-1","-1","-1","-1","-1","-1","0"));
 			System.out.print(i + " ");
-			//System.out.println(reserveinst.get(i));
+			////System.out.println(reserveinst.get(i));
+		}
+		for (int i = 0;i < storebuffer;i++){
+			storebuf.add("-1"+" "+"&");
+		}
+		for(int i =0;i<256;i++){
+			datacache.add(1);
 		}
 		
-		
 		stall=0;
-		//System.out.println("here it is");
-		//System.out.println(GetRegNumbers("JMP 33"));
-		//System.out.println(GetRegNumbers("BEQZ R9 22"));
-		//System.out.println(GetRegNumbers("HLT"));
+		////System.out.println("here it is");
+		////System.out.println(GetRegNumbers("JMP 33"));
+		////System.out.println(GetRegNumbers("BEQZ R9 22"));
+		////System.out.println(GetRegNumbers("HLT"));
 		initialize();
 	}
 
@@ -260,6 +274,16 @@ public class Design {
 	} 
 	private void Update_the_pc (){
 		//if regstation is full wait else send
+		int simpletemp=0;
+		for(int i=0;i<busyarray.size();i++){
+			if(busyarray.get(i)== 0){
+				simpletemp++;
+			}
+		}
+		RSfreeSlots=simpletemp;
+		
+		
+		
 		if(RSfreeSlots>instpercycle)
 			stall=0;
 		if(stall==0){
@@ -282,6 +306,47 @@ public class Design {
 				opcodecountermap.put(1, opcodecountermap.get(1)-1);
 			}else if(opcodecountermap.get(1)== 1){
 				
+				
+				String previnst = reserveinst.get(Integer.parseInt(addlabel));
+				String[] prevarr = previnst.split(" ");
+				int data1 = Integer.parseInt(prevarr[4]);
+				int data2 = Integer.parseInt(prevarr[6]);
+				int instnumb=Integer.parseInt(prevarr[1].split("->")[0]);			
+				if(prevarr[1].split("->")[1].equals("0")){
+					addresult=data1+data2;
+				}else{
+					addresult=data1-data2;
+				}
+				String value = addlabel+" "+addresult;
+				reorderbuffer.put(instnumb, value);
+				reserveinst.set(Integer.parseInt(addlabel), "0 -1 -1 -1 -1 -1 -1 0");
+				busyarray.set(Integer.parseInt(addlabel), 0);
+				lblAddertxt.setText("");
+				
+				
+				for(int i=0;i<entrysize;i++){
+					String curinst= reserveinst.get(i);
+					String[] curarray = curinst.split(" ");
+					int tag1 = Integer.parseInt(curarray[3]);
+					int tag2 = Integer.parseInt(curarray[5]);
+					if(Integer.parseInt(curarray[0])==1){
+						if (tag1==Integer.parseInt(addlabel)){
+							curarray[4]=""+addresult;
+							curarray[3]="-1";
+						}
+						if(tag2==Integer.parseInt(addlabel)){
+							curarray[6]=""+addresult;
+							curarray[5]="-1";
+						}
+						if(curarray[3].equals("-1")&& curarray[5].equals("-1")){
+							curarray[7]="1";
+						}
+						String madeinst=curarray[0]+" "+curarray[1]+" "+curarray[2]+" "+curarray[3]+" "+curarray[4]+" "+curarray[5]+" "+curarray[6]+" "+curarray[7];
+						reserveinst.set(i, madeinst);
+					}
+				}
+				
+				
 				addflag=0;
 				opcodecountermap.put(0, latencymap.get(1));
 				opcodecountermap.put(1, latencymap.get(1));
@@ -292,27 +357,99 @@ public class Design {
 			if(opcodecountermap.get(2)>1){
 				opcodecountermap.put(2, opcodecountermap.get(2)-1);
 			}else if(opcodecountermap.get(2)== 1){
+				String previnst = reserveinst.get(Integer.parseInt(mullabel));
+				String[] prevarr = previnst.split(" ");
+				int data1 = Integer.parseInt(prevarr[4]);
+				int data2 = Integer.parseInt(prevarr[6]);
+				int instnumb=Integer.parseInt(prevarr[1].split("->")[0]);
+				mulresult=data1*data2;
+				String value = mullabel+" "+mulresult;
+				reorderbuffer.put(instnumb, value);	
+				reserveinst.set(Integer.parseInt(mullabel), "0 -1 -1 -1 -1 -1 -1 0");
+				busyarray.set(Integer.parseInt(mullabel), 0);
+				lblAddertxt.setText("");
+				
+				
+				for(int i=0;i<entrysize;i++){
+					String curinst= reserveinst.get(i);
+					String[] curarray = curinst.split(" ");
+					int tag1 = Integer.parseInt(curarray[3]);
+					int tag2 = Integer.parseInt(curarray[5]);
+					if(Integer.parseInt(curarray[0])==1){
+						if (tag1==Integer.parseInt(mullabel)){
+							curarray[4]=""+mulresult;
+							curarray[3]="-1";
+						}
+						if(tag2==Integer.parseInt(mullabel)){
+							curarray[6]=""+mulresult;
+							curarray[5]="-1";
+						}
+						if(curarray[3].equals("-1")&& curarray[5].equals("-1")){
+							curarray[7]="1";
+						}
+						String madeinst=curarray[0]+" "+curarray[1]+" "+curarray[2]+" "+curarray[3]+" "+curarray[4]+" "+curarray[5]+" "+curarray[6]+" "+curarray[7];
+						reserveinst.set(i, madeinst);
+					}
+				}
 				mulflag=0;
 				opcodecountermap.put(2, latencymap.get(2));
 			}
 		}
 		
-		if(ldflag==1 && opcodecountermap.get(3)<=latencymap.get(3)){
-			
-			
+		if(ldflag==1 && opcodecountermap.get(3)<=latencymap.get(3)){	
 			if(opcodecountermap.get(3)>1){
 				opcodecountermap.put(3, opcodecountermap.get(3)-1);
 			}else if(opcodecountermap.get(3)== 1){
+				//System.out.println("----------------------------------------------------------->"+ldlabel);
+				String previnst = reserveinst.get(Integer.parseInt(ldlabel));
+				String[] prevarr = previnst.split(" ");
+				ldresult=Integer.parseInt(prevarr[4]);
+				ldresult=datacache.get(ldresult);
+				int instnumb=Integer.parseInt(prevarr[1].split("->")[0]);
+				String value = ldlabel+" "+ldresult;
+				reorderbuffer.put(instnumb, value);
+				
 				reserveinst.set(Integer.parseInt(ldlabel), "0 -1 -1 -1 -1 -1 -1 0");
 				busyarray.set(Integer.parseInt(ldlabel), 0);
+				lblLoadtxt.setText("");
+				for(int i=0;i<entrysize;i++){
+					String curinst= reserveinst.get(i);
+					String[] curarray = curinst.split(" ");
+					int tag1 = Integer.parseInt(curarray[3]);
+					int tag2 = Integer.parseInt(curarray[5]);
+					if(Integer.parseInt(curarray[0])==1){
+						if (tag1==Integer.parseInt(ldlabel)){
+							curarray[4]=""+ldresult;
+							curarray[3]="-1";
+						}
+						if(tag2==Integer.parseInt(ldlabel)){
+							curarray[6]=""+ldresult;
+							curarray[5]="-1";
+						}
+						if(curarray[3].equals("-1")&& curarray[5].equals("-1")){
+							curarray[7]="1";
+						}
+						String madeinst=curarray[0]+" "+curarray[1]+" "+curarray[2]+" "+curarray[3]+" "+curarray[4]+" "+curarray[5]+" "+curarray[6]+" "+curarray[7];
+						reserveinst.set(i, madeinst);
+					}
+				}
 				ldflag=0;
 				opcodecountermap.put(3, latencymap.get(3));
 			}
 		}
+		
+		
 		if(sdflag==1 && opcodecountermap.get(4)<=latencymap.get(4)){
 			if(opcodecountermap.get(4)>1){
 				opcodecountermap.put(4, opcodecountermap.get(4)-1);
 			}else if(opcodecountermap.get(4)== 1){
+				
+				String previnst = reserveinst.get(Integer.parseInt(sdlabel));
+				String[] prevarr = previnst.split(" ");
+				int instnumb=Integer.parseInt(prevarr[1].split("->")[0]);
+				String value= "S "+prevarr[4]+" "+prevarr[6];
+				reorderbuffer.put(instnumb, value);
+				
 				sdflag=0;
 				opcodecountermap.put(4, latencymap.get(4));
 			}
@@ -335,7 +472,7 @@ public class Design {
 		lblBranchcounttxt.setText("   "+opcodecountermap.get(5));
 		
 		
-		//System.out.println(opcodecountermap);
+		////System.out.println(opcodecountermap);
 		
 	}
 	private String GetRegNumbers (String inst){
@@ -402,7 +539,7 @@ public class Design {
 				}
 			}
 		}
-		//System.out.println(temp);
+		////System.out.println(temp);
 		lblIftxt.setText(temp);
 	}
 	private void Instruction_Decode(int curpc){
@@ -420,15 +557,18 @@ public class Design {
 				}
 			}
 		}
-		//System.out.println(temp);
+		////System.out.println(temp);
 		lblIdtxt.setText(temp);
 	}	
 	private void Read(int curpc){
-		//System.out.println(pc);
+		System.out.println(stagepc);
+		////System.out.println(pc);
 		if(curpc==-1){
 			lblRdtxt.setText("");
 		}else{
 			String temp="";
+			System.out.println(RSfreeSlots);
+			
 			for(int i=0;i<instpercycle;i++){
 				String insttemp="";			
 				if (curpc+i < InstructionCount )
@@ -440,6 +580,8 @@ public class Design {
 					temp=temp+insttemp;
 				}
 			}
+			//System.out.println();
+			
 			if(RSfreeSlots>=instpercycle){
 				lblRdtxt.setText("Dispatching "+temp);
 			}else{
@@ -447,14 +589,7 @@ public class Design {
 				int numb=instpercycle-RSfreeSlots;
 				String[] array = temp.split("    ");
 				String newtemp="";
-				System.out.println("RSFree"+RSfreeSlots);
-				System.out.println("Array lengh"+array.length);
-				/*int inttemp;
-				if(array.length<RSfreeSlots)
-					inttemp=array.length;
-				else
-					inttemp= RSfreeSlots;
-				*/
+			
 				
 			    for(int i=0;i<RSfreeSlots;i++){		
 			    	/*if(i>array.length){*/
@@ -511,9 +646,10 @@ public class Design {
 		}
 	}
 	private void set_archregisters(int opcode,int destr,String dest1,String dest2){
-		String s = ArchReg.get(Integer.parseInt(dest1));
-		String parts[] = s.split(" ");
+		
 		if((opcode == 0)||(opcode == 1)||(opcode == 2)||(opcode == 3)){
+			String s = ArchReg.get(Integer.parseInt(dest1));
+			String parts[] = s.split(" ");
 			ArchReg.set(Integer.parseInt(dest1),stringarf("1",Integer.toString(destr),parts[2]));
 		}
 		else{}
@@ -543,7 +679,6 @@ public class Design {
 			
 			
 			if(parts[parts.length-1].equals("1")){
-				System.out.println(reserveinst.get(i));
 				String[] array =reserveinst.get(i).split(" ");
 				String[] smarray =array[1].split("->");
 				if(!completeinst.contains(Integer.parseInt(smarray[0])))
@@ -620,8 +755,6 @@ public class Design {
 			else if((flag0 == 0)&&(flag1 == 1)){
 				String c0 = get_data(S0);
 				String c1 = get_tag(S1);
-				System.out.println("Entered");
-				System.out.println(c0 + " " + c1);
 				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c0,c1,"&","0"));
 			}
 			else if((flag0 == 1)&&(flag1 == 1)){
@@ -653,12 +786,17 @@ public class Design {
 		else {
 			reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"-1","-1","-1","-1","1","1"));
 		}
+		//System.out.println(reserveinst);
 	}
 	private void Reservation_Station(int curpc){
+		
+		
 		int tempfreeslot = RSfreeSlots;
 		int count = 0;
 
-		if(curpc==-1){}
+		if(curpc==-1){
+			
+		}
 		else{
 			int mynumb;
 			
@@ -667,35 +805,31 @@ public class Design {
 			}else{
 				mynumb=RSfreeSlots;
 			}
-			System.out.println("curpcc "+curpc);
 			ArrayList<String> smalllist = new ArrayList<String>();
 			for(int i=0;i<mynumb;i++){
 				int temp=curpc+i;
 				smalllist.add(DecodeInstSet.get(curpc+i)+" "+temp);
 				count = count + 1;
 			}
-			System.out.println(smalllist);
 			
+			int cnt=0;
 			
-			
-			for(int i=0;i<entrysize;i++){
+			for(int i=0;i<entrysize&&cnt<mynumb;i++){
 				if(busyarray.get(i)==0){
-					
+					cnt++;
+					String s = smalllist.get(0);
+					String[] parts1 = s.split(" ");
+					int opcode = getnumberop(parts1[0]);
+					String[] parts2 = GetRegNumbers(s).split(" ");
+					set_reservstation(opcode,parts1[parts1.length-1],i,parts2[0],parts2[1],parts2[2]);
+					set_archregisters(opcode,i,parts2[0],parts2[1]);
+					smalllist.remove(0);
 				}
 			}
 			
 			
 			
-			
-			
-			for (int i = 0; i < count; i++) {
-				String s = smalllist.get(i);
-				String[] parts1 = s.split(" ");
-				int opcode = getnumberop(parts1[0]);
-				String[] parts2 = GetRegNumbers(s).split(" ");
-				set_reservstation(opcode,parts1[parts1.length-1],curpc+i,parts2[0],parts2[1],parts2[2]);
-				set_archregisters(opcode,curpc+i,parts2[0],parts2[1]);
-			}
+		
 			for(int i=0;i<8;i++){
 				String tempo =ArchReg.get(i);
 				String[] tempoarray = tempo.split(" ");
@@ -705,19 +839,6 @@ public class Design {
 			
 			
 			
-			for (int j = 0; j < reserveinst.size(); j++) {
-				String tempstring = reserveinst.get(j);
-				String[] array = tempstring.split(" ");
-				String first = array[0];
-				String last = array[7];
-				String mid = "   "+array[1]+"   "+ array[2]+"   "+ array[3]+"   "+ array[4]+"   "+ array[5]+"   "+ array[6];
-				reslabelmaker.get(j).setText(mid);
-				validlabelmaker.get(j).setText(last);
-				busyarray.set(j,Integer.parseInt(first));
-				busylabelmaker.get(j).setText("   "+first);
-				
-			}
-
 			
 			int simpletemp=0;
 			for(int i=0;i<busyarray.size();i++){
@@ -735,15 +856,14 @@ public class Design {
 			}
 		    if(stagepc.get(1)>0&& stall==1){
 		    	if(stagepc.get(1)+tempfreeslot>=InstructionCount)
-					stagepc.set(0, -1);	
+					stagepc.set(1, -1);	
 				else
 					stagepc.set(1, stagepc.get(1)+tempfreeslot);
 		    }
 		    	
-		    
 		    if(stagepc.get(2)>0&& stall==1){
 		        if(stagepc.get(2)+tempfreeslot>=InstructionCount)
-					stagepc.set(0, -1);	
+					stagepc.set(2, -1);	
 				else
 					stagepc.set(2, stagepc.get(2)+tempfreeslot);
 		    }
@@ -753,13 +873,24 @@ public class Design {
 		    
 	
 		}
+		for (int j = 0; j < reserveinst.size(); j++) {
+			//System.out.println(reserveinst.get(j));
+			String tempstring = reserveinst.get(j);
+			String[] array = tempstring.split(" ");
+			String first = array[0];
+			String last = array[7];
+			String mid = "   "+array[1]+"   "+ array[2]+"   "+ array[3]+"   "+ array[4]+"   "+ array[5]+"   "+ array[6];
+			reslabelmaker.get(j).setText(mid);
+			validlabelmaker.get(j).setText(last);
+			busyarray.set(j,Integer.parseInt(first));
+			busylabelmaker.get(j).setText("   "+first);
+			
+		}
 	}
-	
 
-	
 	private void Execute(){
 		AddtoInslist();
-		System.out.println(CycleInslist);
+		//System.out.println(CycleInslist);
 		if(!CycleInslist.get(0).isEmpty()){
 			HashMap <Integer,String> localmap = new HashMap<Integer,String>();
 			for(int i=0;i<CycleInslist.get(0).size();i++){
@@ -770,11 +901,8 @@ public class Design {
 				String value = tempparray[0]+" "+arrowsplit[1]+" "+tempparray[3]+" "+tempparray[4]+" "+tempparray[5]+" "+tempparray[6]+" "+tempparray[7];
 				localmap.put(key, value);
 			}
-			System.out.println("before"+localmap);
 			Map<Integer, String> sortedMap = new TreeMap<Integer, String>(localmap);
-			System.out.println("After"+sortedMap);
 			for(Integer key : sortedMap.keySet()){
-				System.out.println("-------------------------------------------->"+key);
 				String s = sortedMap.get(key);
 				String[] sarray = s.split(" ");
 				int size = sarray.length;
