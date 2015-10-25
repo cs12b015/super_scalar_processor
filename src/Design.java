@@ -52,6 +52,7 @@ public class Design {
 	private ArrayList<JLabel> reslabelmaker = new ArrayList<JLabel> ();
 	private ArrayList<JLabel> busylabelmaker = new ArrayList<JLabel> ();
 	private ArrayList<JLabel> validlabelmaker = new ArrayList<JLabel> ();
+	private ArrayList<JLabel> registerlabelmaker = new ArrayList<JLabel> ();
 	
 	private ArrayList<Integer> resarray = new ArrayList<Integer>();
 	private ArrayList<Integer> busyarray = new ArrayList<Integer>();
@@ -65,6 +66,7 @@ public class Design {
 	private ArrayList<String> ArchReg = new ArrayList <String>();
 	private ArrayList<String> reserveinst = new ArrayList<String>();
 	private ArrayList <Integer> stagepc = new ArrayList<Integer>();
+	private ArrayList<String> Inslist = new ArrayList<String>();
 
 	/**
 	 * Launch the application.
@@ -183,6 +185,7 @@ public class Design {
 		Instruction_Decode(stagepc.get(1));
 		Read(stagepc.get(2));
 		Reservation_Station(stagepc.get(2));
+		Execute();
 		Complete(stagepc.get(4));
 		Retire(stagepc.get(5));
 	}
@@ -228,6 +231,14 @@ public class Design {
 		
 		System.out.println(stagepc);
 		System.out.println("free slots =========>"+RSfreeSlots);
+		
+
+		
+		
+		
+		
+		
+		
 	}
 	
 	private String GetRegNumbers (String inst){
@@ -402,9 +413,6 @@ public class Design {
 		if((opcode == 0)||(opcode == 1)||(opcode == 2)||(opcode == 3)){
 			ArchReg.set(Integer.parseInt(dest1),stringarf("1",Integer.toString(destr),parts[2]));
 		}
-		else if(opcode == 4){
-			ArchReg.set(Integer.parseInt(dest2),stringarf("1",Integer.toString(destr),parts[2]));
-		}
 		else{}
 	}
 	private int check_ifBusy(String s){
@@ -424,18 +432,26 @@ public class Design {
 		String parts[] = s.split(" ");
 		return parts[2];
 	}
-	private void set_reservstation(int opcode,int index,String s1,String s2){
+	private void AddtoInslist(){
+		for (int i = 0; i < reserveinst.size(); i++) {
+			String parts[] = reserveinst.get(i).split(" ");
+			if(parts[parts.length-1].equals("1")){
+				Inslist.add(i+" "+reserveinst.get(i));
+			}
+		}
+	}
+	private void set_reservstation(int opcode,String instnumb,int index,String s0,String s1,String s2){
 		if((opcode == 0)||(opcode == 1)||(opcode == 2)){
 			if(s2.substring(0,1).equals("&")){
 				String s = ArchReg.get(Integer.parseInt(s1));
 				int flag = check_ifBusy(s);
 				if(flag == 1){
 					String c = get_tag(s);
-					reserveinst.set(index,stringrs("1",Integer.toString(opcode),"&",c,"&","-1",s2.substring(1),"0"));
+					reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&",c,"&","-1",s2.substring(1),"0"));
 				}
 				else{
 					String c = get_data(s);
-					reserveinst.set(index,stringrs("1",Integer.toString(opcode),"&","-1",c,"-1",s2.substring(1),"0"));
+					reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c,"-1",s2.substring(1),"1"));
 				}
 			}
 			else{
@@ -446,18 +462,80 @@ public class Design {
 				if((flag1 == 1)&&(flag2 == 0)){
 					String c1 = get_tag(S1);
 					String c2 = get_data(S2);
-					reserveinst.set(index,stringrs("1",Integer.toString(opcode),"&",c1,"&","-1",c2,"0"));
+					reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&",c1,"&","-1",c2,"0"));
 				}
 				else if((flag1 == 0)&&(flag2 == 1)){
 					String c1 = get_data(S1);
 					String c2 = get_tag(S2);
-					reserveinst.set(index,stringrs("1",Integer.toString(opcode),"&","-1",c1,c2,"&","0"));
+					reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c1,c2,"&","0"));
 				}
 				else if((flag1 == 1)&&(flag2 == 1)){
-					String c1 = get_data(S1);
+					String c1 = get_tag(S1);
 					String c2 = get_tag(S2);
+					reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&",c1,"&",c2,"&","0"));
+				}
+				else if((flag1 == 0)&&(flag2 == 0)){
+					String c1 = get_data(S1);
+					String c2 = get_data(S2);
+					reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c1,"-1",c2,"1"));
 				}
 			}
+		}
+		else if(opcode == 3){
+			String s = ArchReg.get(Integer.parseInt(s1));
+			int flag = check_ifBusy(s);
+			if(flag == 1){
+				String c = get_tag(s);
+				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&",c,"&","-1","&","0"));
+			}
+			else{
+				String c = get_data(s);
+				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c,"-1","&","1"));
+			}
+		}
+		else if(opcode == 4){
+			String S0 = ArchReg.get(Integer.parseInt(s0));
+			String S1 = ArchReg.get(Integer.parseInt(s1));
+			int flag0 = check_ifBusy(S0);
+			int flag1 = check_ifBusy(S1);
+			if((flag0 == 1)&&(flag1 == 0)){
+				String c0 = get_tag(S0);
+				String c1 = get_data(S1);
+				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&",c0,"&","-1",c1,"0"));
+			}
+			else if((flag0 == 0)&&(flag1 == 1)){
+				String c0 = get_data(S0);
+				String c1 = get_tag(S1);
+				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c0,c1,"&","0"));
+			}
+			else if((flag0 == 1)&&(flag1 == 1)){
+				String c0 = get_tag(S0);
+				String c1 = get_tag(S1);
+				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&",c0,"&",c1,"&","0"));
+			}
+			else if((flag0 == 0)&&(flag1 == 0)){
+				String c0 = get_data(S0);
+				String c1 = get_data(S1);
+				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c0,"-1",c1,"1"));
+			}
+		}
+		else if(opcode == 5){
+			reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",s0.substring(1),"-1","-1","1"));
+		}
+		else if(opcode == 6){
+			String s = ArchReg.get(Integer.parseInt(s0));
+			int flag = check_ifBusy(s);
+			if(flag == 1){
+				String c = get_tag(s);
+				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&",c,"&","-1",s1.substring(1),"0"));
+			}
+			else{
+				String c = get_data(s);
+				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c,"-1",s1.substring(1),"1"));
+			}
+		}
+		else {
+			reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"-1","-1","-1","-1","1","1"));
 		}
 	}
 	private void Reservation_Station(int curpc){
@@ -480,7 +558,8 @@ public class Design {
 			System.out.println("-------------------------------"+DecodeInstSet.get(4));
 			for(int i=0;i<mynumb;i++){
 				int temp=curpc+i;
-				smalllist.add(temp+" "+DecodeInstSet.get(curpc+i));
+				/*smalllist.add(temp+" "+DecodeInstSet.get(curpc+i));*/
+				smalllist.add(DecodeInstSet.get(curpc+i)+" "+temp);
 				count = count + 1;
 				System.out.println(i);
 			}
@@ -498,26 +577,42 @@ public class Design {
 				System.out.println(GetRegNumbers(s));
 				String[] parts2 = GetRegNumbers(s).split(" ");
 				System.out.println(parts2[0] + " " + parts2[1] + " " + parts2[2]);
-				set_reservstation(opcode,curpc+1,parts2[1],parts2[2]);
+				set_reservstation(opcode,parts1[parts1.length-1],curpc+i,parts2[0],parts2[1],parts2[2]);
 				set_archregisters(opcode,curpc+i,parts2[0],parts2[1]);
 				System.out.println("Changed Arch registers");
 				for (int j = 0; j < 8; j++) {
 					System.out.println(ArchReg.get(j));
 				}
+				System.out.println("((((((((((((()))))))))))))");
+				System.out.println(Inslist.isEmpty());
+				
+			
 				//reserveinst.set(curpc+i, stringrs("1","-1","-1","-1","-1","-1","-1","0"));
 			}
-			System.out.println("****************");
-			for(int i=0;i<entrysize;i++){
-				if(smalllist.size()>0){
-					if(busyarray.get(i)==0){
-						reslabelmaker.get(i).setText(smalllist.get(0));
-						smalllist.remove(0);
-						busyarray.set(i, 1);
-						busylabelmaker.get(i).setText("   1");
-					}
-				}
+			AddtoInslist();
+			for(int i=0;i<8;i++){
+				String tempo =ArchReg.get(i);
+				String[] tempoarray = tempo.split(" ");
+				String finalstring = "        "+tempoarray[0]+"        "+tempoarray[1]+"        "+tempoarray[2];
+				registerlabelmaker.get(i).setText(finalstring);
 			}
-			System.out.println(busyarray);
+			
+			
+			
+			for (int j = 0; j < reserveinst.size(); j++) {
+				String tempstring = reserveinst.get(j);
+				String[] array = tempstring.split(" ");
+				String first = array[0];
+				String last = array[7];
+				String mid = "   "+array[1]+"   "+ array[2]+"   "+ array[3]+"   "+ array[4]+"   "+ array[5]+"   "+ array[6];
+				reslabelmaker.get(j).setText(mid);
+				validlabelmaker.get(j).setText(last);
+				busyarray.set(j,Integer.parseInt(first));
+				busylabelmaker.get(j).setText("   "+first);
+				
+				System.out.println(reserveinst.get(j));
+			}
+
 			
 			int simpletemp=0;
 			for(int i=0;i<busyarray.size();i++){
@@ -555,8 +650,24 @@ public class Design {
 	
 		}
 	}
+	
+	private void Execute(){
+		if(!Inslist.isEmpty()){
+			HashMap <Integer,String> localmap = new HashMap<Integer,String>();
+			for(int i=0;i<Inslist.size();i++){
+				String tempp = Inslist.get(i);
+				String[] tempparray = tempp.split(" ");
+				String[] arrowsplit = tempparray[2].split("->");
+				int key = Integer.parseInt(arrowsplit[0]);
+				String value = tempparray[0]+" "+arrowsplit[1]+" "+tempparray[3]+" "+tempparray[4]+" "+tempparray[5]+" "+tempparray[6]+" "+tempparray[7];
+				localmap.put(key, value);
+			}
+			System.out.println(localmap);
+		}		
+	}
 	private void Complete(int pc){}
 	private void Retire(int pc){}
+	
 	
 	
 	
@@ -631,43 +742,41 @@ public class Design {
 		
 		JLabel lblHead= new JLabel("Superscalar Pipelined Processor");
 		lblHead.setFont(new Font("Abyssinica SIL", Font.BOLD, 28));
-		lblHead.setBounds(500, 30, 600, 40);
+		lblHead.setBounds(430, 30, 600, 40);
 		frame.getContentPane().add(lblHead);
 		
 		JLabel lblIf = new JLabel("Instruction Fetch");
-		lblIf.setBounds(200, 100, 200, 15);
+		lblIf.setBounds(50, 100, 200, 15);
 		frame.getContentPane().add(lblIf);
 		
 		JLabel lblId= new JLabel("Instructon Decode");
-		lblId.setBounds(200, 150, 200, 15);
+		lblId.setBounds(50, 150, 200, 15);
 		frame.getContentPane().add(lblId);
 		
 		JLabel lblRd= new JLabel("Read/Dispatch");
-		lblRd.setBounds(200, 200, 200, 15);
+		lblRd.setBounds(50, 200, 200, 15);
 		frame.getContentPane().add(lblRd);
 	
 		lblIftxt = new JLabel("");
 		lblIftxt.setOpaque(true);
 		lblIftxt.setBackground(Color.white);
-		lblIftxt.setBounds(365, 95, 774, 25);
+		lblIftxt.setBounds(215, 95, 774, 25);
 		frame.getContentPane().add(lblIftxt);
 		
 		lblIdtxt = new JLabel("");
 		lblIdtxt.setOpaque(true);
 		lblIdtxt.setBackground(Color.white);
-		lblIdtxt.setBounds(365, 145, 774, 25);
+		lblIdtxt.setBounds(215, 145, 774, 25);
 		frame.getContentPane().add(lblIdtxt);
 		
 		lblRdtxt = new JLabel("");
 		lblRdtxt.setOpaque(true);
 		lblRdtxt.setBackground(Color.white);
-		lblRdtxt.setBounds(365, 195, 774, 25);
+		lblRdtxt.setBounds(215, 195, 774, 25);
 		frame.getContentPane().add(lblRdtxt);
 			
-		int xcord=550;
+		int xcord=410;
 		int ycord=275;
-		int curx= 330;
-		int cury=310;
 	
 		for(int i=0;i<entrysize;i++){
 			
@@ -703,30 +812,55 @@ public class Design {
 			ycord=ycord+10;
 		}
 		
+		int regx=1100;
+		int regy=180;
+		
+		JLabel archreg = new JLabel("Arch Registers");
+		archreg.setBounds(regx+40,regy-30, 200, 15);
+		frame.getContentPane().add(archreg);
+		
+		
+		
+		for(int i=0;i<8;i++){
+			
+			JLabel lblregtxt = new JLabel("");
+			lblregtxt.setOpaque(true);
+			lblregtxt.setBackground(Color.white);
+			lblregtxt.setBounds(regx, regy, 180, 25);
+			
+			frame.getContentPane().add(lblregtxt);
+			registerlabelmaker.add(lblregtxt);
+			regy=regy+30;
+		}
+		
+		
+		
+		
+		
 		
 		JLabel lblMem = new JLabel("Complete");
-		lblMem.setBounds(200, ycord+5, 200, 15);
+		lblMem.setBounds(50, ycord+5, 200, 15);
 		frame.getContentPane().add(lblMem);
 		
 		JLabel lblWb= new JLabel("Retire");
-		lblWb.setBounds(200, ycord+55, 200, 15);
+		lblWb.setBounds(50, ycord+55, 200, 15);
 		frame.getContentPane().add(lblWb);
 		
 		lblcompletetxt = new JLabel("");
 		lblcompletetxt.setOpaque(true);
 		lblcompletetxt.setBackground(Color.white);
-		lblcompletetxt.setBounds(365, ycord, 774, 25);
+		lblcompletetxt.setBounds(215, ycord, 774, 25);
 		frame.getContentPane().add(lblcompletetxt);
 		
 		lblretiretxt = new JLabel("");
 		lblretiretxt.setOpaque(true);
 		lblretiretxt.setBackground(Color.white);
-		lblretiretxt.setBounds(365, ycord+50, 774, 25);
+		lblretiretxt.setBounds(215, ycord+50, 774, 25);
 		frame.getContentPane().add(lblretiretxt);
 		
 		lblReservationStation = new JLabel("Reservation Station");
 		lblReservationStation.setFont(new Font("Dialog", Font.BOLD, 14));
-		lblReservationStation.setBounds(625, 176, 200, 50);
+		lblReservationStation.setBounds(485, 226, 200, 50);
 		frame.getContentPane().add(lblReservationStation);
 			
 		
