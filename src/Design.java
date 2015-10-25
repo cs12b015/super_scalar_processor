@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigInteger;
 
 
 public class Design {
@@ -32,6 +33,16 @@ public class Design {
 	private int loadlatency;
 	private int storelatency;
 	private int branchlatency;
+	private int al;
+	private int ll;
+	private int ml;
+	private int sl;
+	private int bl;
+	private int a;
+	private int m;
+	private int s;
+	private int b;
+	private int l;
 	
 	private int stall;
 	
@@ -127,6 +138,16 @@ public class Design {
 		loadlatency=Integer.parseInt(values.get(6)) ;
 		storelatency=Integer.parseInt(values.get(7)) ;
 		branchlatency=Integer.parseInt(values.get(8)) ;
+		al = addlatency;
+		ml = mullatency;
+		ll = loadlatency;
+		sl = storelatency;
+		bl = branchlatency;
+		a = 0;
+		m = 0;
+		l = 0;
+		s = 0;
+		b = 0;
 		
 		RSfreeSlots=entrysize;
 		for (int i = 0; i < entrysize; i++) {
@@ -150,7 +171,6 @@ public class Design {
 	/**
 	 * Initialize the contents of the frame.
 	 */
-	
 	public static String stringarf(String busy,String tag,String data){
 		String res = busy;
 		res = res.concat(" ");
@@ -159,7 +179,6 @@ public class Design {
 		res = res.concat(data);
 		return res;
 	}
-	
 	public static String stringrs(String busy,String opcode,String dest,String tag1,String s1,String tag2,String s2,String ready){
 		String res = busy;
 		res = res.concat(" ");
@@ -178,7 +197,6 @@ public class Design {
 		res = res.concat(ready);
 		return res;
 	}
-
 	private void mynextfunc(){
 		Update_the_pc();
 		Instruction_Fetch(stagepc.get(0));
@@ -189,8 +207,6 @@ public class Design {
 		Complete(stagepc.get(4));
 		Retire(stagepc.get(5));
 	}
-	
-	
 	private void myfunc(){
 		
 		for(int i=0;i<entrysize;i++){
@@ -206,15 +222,10 @@ public class Design {
 		btnNext.setEnabled(true);
 		mynextfunc();
 	} 
-	
-	
-	
 	private void Update_the_pc (){
 		//if regstation is full wait else send
 		if(RSfreeSlots>instpercycle)
 			stall=0;
-		
-		
 		if(stall==0){
 			stagepc.remove(stagepc.size()-1);
 			if(pc<InstructionCount){
@@ -231,16 +242,7 @@ public class Design {
 		
 		System.out.println(stagepc);
 		System.out.println("free slots =========>"+RSfreeSlots);
-		
-
-		
-		
-		
-		
-		
-		
 	}
-	
 	private String GetRegNumbers (String inst){
 		String result="";
 		String[] array = inst.split(" ");
@@ -290,9 +292,6 @@ public class Design {
 		
 		return result;
 	} 
-	
-	
-	
 	private void Instruction_Fetch(int curpc){		
 		String temp="";
 		if(curpc!=-1){			
@@ -328,9 +327,7 @@ public class Design {
 		}
 		System.out.println(temp);
 		lblIdtxt.setText(temp);
-	}
-
-	
+	}	
 	private void Read(int curpc){
 		System.out.println(pc);
 		if(curpc==-1){
@@ -651,6 +648,8 @@ public class Design {
 		}
 	}
 	
+
+	
 	private void Execute(){
 		if(!Inslist.isEmpty()){
 			HashMap <Integer,String> localmap = new HashMap<Integer,String>();
@@ -663,7 +662,29 @@ public class Design {
 				localmap.put(key, value);
 			}
 			System.out.println(localmap);
-		}		
+			Map<Integer, String> sortedMap = new TreeMap<Integer, String>(localmap);
+			for(Integer key : sortedMap.keySet()){
+				String s = sortedMap.get(key);
+				executeop(s);
+			}
+			//System.out.println(sortedMap.size());	
+		}
+	}
+	private void executeop(String s){
+		String parts[] = s.split(" ");
+		if((parts[1].equals("0"))&&(a == 0)){
+			if(al > 0){
+				al = al -1;
+				if(al == 0){
+					int temp1 = Integer.parseInt(parts[4]);
+					int temp2 = Integer.parseInt(parts[6]);
+					int result = temp1 + temp2;
+					set_reservstation(0, instnumb, index, s0, s1, s2)
+					a = 0;
+					al = addlatency;
+				}
+			}
+		}
 	}
 	private void Complete(int pc){}
 	private void Retire(int pc){}
