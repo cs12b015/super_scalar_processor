@@ -67,7 +67,17 @@ public class Design {
 	private ArrayList<String> reserveinst = new ArrayList<String>();
 	private ArrayList <Integer> stagepc = new ArrayList<Integer>();
 	private ArrayList<String> Inslist = new ArrayList<String>();
-
+	private JLabel lblAdder;
+	private JLabel lblAddertxt;
+	private JLabel lblMULtxt;
+	private JLabel lblLoadtxt;
+	private JLabel lblAddercounttxt;
+	private JLabel lblMULcounttxt;
+	private JLabel lblLoadcounttxt;
+	private JLabel lblStorecounttxt;
+	private JLabel lblBranchcounttxt;
+	private JLabel lblStoretxt;
+	private JLabel lblBranchtxt;
 	/**
 	 * Launch the application.
 	 */
@@ -740,10 +750,10 @@ public class Design {
 			 btnQuit.setBounds(567, 668, 87, 25);
 			frame.getContentPane().add(btnQuit);
 		
-		JLabel lblHead= new JLabel("Superscalar Pipelined Processor");
+		/*JLabel lblHead= new JLabel("Superscalar Pipelined Processor");
 		lblHead.setFont(new Font("Abyssinica SIL", Font.BOLD, 28));
 		lblHead.setBounds(430, 30, 600, 40);
-		frame.getContentPane().add(lblHead);
+		frame.getContentPane().add(lblHead);*/
 		
 		JLabel lblIf = new JLabel("Instruction Fetch");
 		lblIf.setBounds(50, 100, 200, 15);
@@ -775,9 +785,14 @@ public class Design {
 		lblRdtxt.setBounds(215, 195, 774, 25);
 		frame.getContentPane().add(lblRdtxt);
 			
-		int xcord=410;
+		int xcord=80;
 		int ycord=275;
 	
+		lblReservationStation = new JLabel("Reservation Station");
+		lblReservationStation.setFont(new Font("Dialog", Font.BOLD, 14));
+		lblReservationStation.setBounds(xcord+75, ycord-50, 200, 50);
+		frame.getContentPane().add(lblReservationStation);
+		
 		for(int i=0;i<entrysize;i++){
 			
 			JLabel lblbusytxt = new JLabel("");
@@ -820,6 +835,91 @@ public class Design {
 		frame.getContentPane().add(archreg);
 		
 		
+		lblAdder = new JLabel("Adder");
+		lblAdder.setBounds(500, 255, 175, 15);
+		frame.getContentPane().add(lblAdder);
+		
+		lblAddertxt = new JLabel("");
+		lblAddertxt.setOpaque(true);
+		lblAddertxt.setBackground(Color.white);
+		lblAddertxt.setBounds(430, 270, 175, 40);
+		frame.getContentPane().add(lblAddertxt);
+		
+		lblAddercounttxt = new JLabel("");
+		lblAddercounttxt.setOpaque(true);
+		lblAddercounttxt.setBackground(Color.white);
+		lblAddercounttxt.setBounds(610, 270,50, 40);
+		frame.getContentPane().add(lblAddercounttxt);
+		
+		JLabel lblMUL = new JLabel("Mul");
+		lblMUL.setBounds(500, 345, 175, 15);
+		frame.getContentPane().add(lblMUL);
+		
+		lblMULtxt = new JLabel("");
+		lblMULtxt.setOpaque(true);
+		lblMULtxt.setBackground(Color.white);
+		lblMULtxt.setBounds(430, 360, 175, 40);
+		frame.getContentPane().add(lblMULtxt);
+		
+		lblMULcounttxt = new JLabel("");
+		lblMULcounttxt.setOpaque(true);
+		lblMULcounttxt.setBackground(Color.white);
+		lblMULcounttxt.setBounds(610, 360, 50, 40);
+		frame.getContentPane().add(lblMULcounttxt);
+		
+		JLabel lblLoad = new JLabel("Load");
+		lblLoad.setBounds(500, 435, 175, 15);
+		frame.getContentPane().add(lblLoad);
+		
+		lblLoadtxt = new JLabel("");
+		lblLoadtxt.setOpaque(true);
+		lblLoadtxt.setBackground(Color.white);
+		lblLoadtxt.setBounds(430, 450, 175, 40);
+		frame.getContentPane().add(lblLoadtxt);
+		
+		lblLoadcounttxt = new JLabel("");
+		lblLoadcounttxt.setOpaque(true);
+		lblLoadcounttxt.setBackground(Color.white);
+		lblLoadcounttxt.setBounds(610, 450,50, 40);
+		frame.getContentPane().add(lblLoadcounttxt);
+		
+		JLabel lblStore = new JLabel("Store");
+		lblStore.setBounds(800, 255, 175, 15);
+		frame.getContentPane().add(lblStore);
+		
+		lblStoretxt = new JLabel("");
+		lblStoretxt.setOpaque(true);
+		lblStoretxt.setBackground(Color.white);
+		lblStoretxt.setBounds(740, 270, 175, 40);
+		frame.getContentPane().add(lblStoretxt);
+		
+		lblStorecounttxt = new JLabel("");
+		lblStorecounttxt.setOpaque(true);
+		lblStorecounttxt.setBackground(Color.white);
+		lblStorecounttxt.setBounds(920, 270, 50, 40);
+		frame.getContentPane().add(lblStorecounttxt);
+		
+		JLabel lblBranch = new JLabel("Store");
+		lblBranch.setBounds(800, 345, 175, 15);
+		frame.getContentPane().add(lblBranch);
+		
+		lblBranchtxt = new JLabel("");
+		lblBranchtxt.setOpaque(true);
+		lblBranchtxt.setBackground(Color.white);
+		lblBranchtxt.setBounds(740, 360, 175, 40);
+		frame.getContentPane().add(lblBranchtxt);
+		
+		lblBranchcounttxt = new JLabel("");
+		lblBranchcounttxt.setOpaque(true);
+		lblBranchcounttxt.setBackground(Color.white);
+		lblBranchcounttxt.setBounds(920, 360, 50, 40);
+		frame.getContentPane().add(lblBranchcounttxt);
+		
+		
+		
+		
+		
+		
 		
 		for(int i=0;i<8;i++){
 			
@@ -839,29 +939,28 @@ public class Design {
 		
 		
 		JLabel lblMem = new JLabel("Complete");
-		lblMem.setBounds(50, ycord+5, 200, 15);
+		lblMem.setBounds(50, ycord+15, 200, 15);
 		frame.getContentPane().add(lblMem);
 		
 		JLabel lblWb= new JLabel("Retire");
-		lblWb.setBounds(50, ycord+55, 200, 15);
+		lblWb.setBounds(50, ycord+65, 200, 15);
 		frame.getContentPane().add(lblWb);
 		
 		lblcompletetxt = new JLabel("");
 		lblcompletetxt.setOpaque(true);
 		lblcompletetxt.setBackground(Color.white);
-		lblcompletetxt.setBounds(215, ycord, 774, 25);
+		lblcompletetxt.setBounds(215, ycord+10, 774, 25);
 		frame.getContentPane().add(lblcompletetxt);
 		
 		lblretiretxt = new JLabel("");
 		lblretiretxt.setOpaque(true);
 		lblretiretxt.setBackground(Color.white);
-		lblretiretxt.setBounds(215, ycord+50, 774, 25);
+		lblretiretxt.setBounds(215, ycord+60, 774, 25);
 		frame.getContentPane().add(lblretiretxt);
 		
-		lblReservationStation = new JLabel("Reservation Station");
-		lblReservationStation.setFont(new Font("Dialog", Font.BOLD, 14));
-		lblReservationStation.setBounds(485, 226, 200, 50);
-		frame.getContentPane().add(lblReservationStation);
+		
+		
+		
 			
 		
 	}
