@@ -479,7 +479,8 @@ public class Design {
 			ArrayList<String> smalllist = new ArrayList<String>();
 			System.out.println("-------------------------------"+DecodeInstSet.get(4));
 			for(int i=0;i<mynumb;i++){
-				smalllist.add(DecodeInstSet.get(curpc+i));
+				int temp=curpc+i;
+				smalllist.add(temp+" "+DecodeInstSet.get(curpc+i));
 				count = count + 1;
 				System.out.println(i);
 			}
