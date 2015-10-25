@@ -359,6 +359,43 @@ public class Design {
 			
 		}
 	}
+	private int getnumberop(String opc){
+		String s1 = "ADD";
+		String s2 = "SUB";
+		String s3 = "MUL";
+		String s4 = "LD";
+		String s5 = "SD";
+		String s6 = "JMP";
+		String s7 = "BEQZ";
+		String s8 = "HALT";
+		if (opc.equals(s1)){
+			return 0;
+		}
+		else if(opc.equals(s2)){
+			return 1;
+		}
+		else if(opc.equals(s3)){
+			return 2;
+		}
+		else if(opc.equals(s4)){
+			return 3;
+		}
+		else if(opc.equals(s5)){
+			return 4;
+		}
+		else if(opc.equals(s6)){
+			return 5;
+		}
+		else if(opc.equals(s7)){
+			return 6;
+		}
+		else if(opc.equals(s8)){
+			return 7;
+		}
+		else{
+			return -1;
+		}
+	}
 	private void Reservation_Station(int curpc){
 		System.out.println("now");
 		int tempfreeslot = RSfreeSlots;
@@ -389,7 +426,12 @@ public class Design {
 				System.out.println(smalllist.get(i));
 				String s = smalllist.get(i);
 				String[] parts = s.split(" ");
-				reserveinst.set(curpc+i, stringrs("1","-1","-1","-1","-1","-1","-1","0"));
+				//System.out.println(parts[0]);
+				int opcode = getnumberop(parts[0]);
+				//System.out.println( getnumberop(parts[0]));
+				System.out.println("00000000000000");
+				System.out.println(GetRegNumbers(s));
+				//reserveinst.set(curpc+i, stringrs("1","-1","-1","-1","-1","-1","-1","0"));
 			}
 			System.out.println("****************");
 			for(int i=0;i<entrysize;i++){
