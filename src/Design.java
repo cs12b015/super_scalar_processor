@@ -98,7 +98,7 @@ public class Design {
 		InstructionCount=0;
 		br = new BufferedReader(new FileReader("src/Pr_test1.b"));		
         line =  null;
-        for (int i = 0; i < 8; i++) {
+         for (int i = 0; i < 8; i++) {
         	ArchReg.add(stringarf("0","-1","0"));
 		}
 		while((line=br.readLine())!=null){
@@ -138,6 +138,10 @@ public class Design {
 		
 		
 		stall=0;
+		System.out.println("here it is");
+		System.out.println(GetRegNumbers("JMP 33"));
+		System.out.println(GetRegNumbers("BEQZ R9 22"));
+		System.out.println(GetRegNumbers("HLT"));
 		initialize();
 	}
 
@@ -172,7 +176,7 @@ public class Design {
 		res = res.concat(ready);
 		return res;
 	}
-	
+
 	private void mynextfunc(){
 		Update_the_pc();
 		Instruction_Fetch(stagepc.get(0));
@@ -204,6 +208,10 @@ public class Design {
 	
 	private void Update_the_pc (){
 		//if regstation is full wait else send
+		if(RSfreeSlots>instpercycle)
+			stall=0;
+		
+		
 		if(stall==0){
 			stagepc.remove(stagepc.size()-1);
 			if(pc<InstructionCount){
@@ -218,15 +226,60 @@ public class Design {
 			
 		}
 		
-		
-		
-		
-		
-		
-		
 		System.out.println(stagepc);
 		System.out.println("free slots =========>"+RSfreeSlots);
 	}
+	
+	private String GetRegNumbers (String inst){
+		String result="";
+		String[] array = inst.split(" ");
+		String temp1,temp2,temp3;
+		if(array[0].equals("ADD")||array[0].equals("SUB")||array[0].equals("MUL")){
+			
+			temp1=array[1].split("R")[1];
+			temp2=array[2].split("R")[1];	
+			if(array[3].charAt(0)=='R')
+				temp3=array[3].split("R")[1];
+			else
+				temp3="&"+array[3].split("R")[0];
+			result=temp1+" "+temp2+" "+temp3;
+		}else if(array[0].equals("LD")){
+			temp1=array[1].split("R")[1];
+			if(array[2].charAt(0)=='['){
+				temp2=array[2].substring(2).split("]")[0];
+			}else{
+				temp2 = "&"+array[2];
+			}	
+			temp3="-1";
+			result=temp1+" "+temp2+" "+temp3;
+		}else if(array[0].equals("SD")){
+			temp1=array[1].substring(2).split("]")[0];	
+			temp2=array[2].split("R")[1];
+			temp3="-1";
+			result=temp1+" "+temp2+" "+temp3;
+		}else if(array[0].equals("JMP")){
+			if(array[1].charAt(0)=='R')
+				temp1=array[1].split("R")[1];
+			else
+				temp1="&"+array[1].split("R")[0];
+			temp2="-1";
+			temp3="-1";
+			result=temp1+" "+temp2+" "+temp3;
+		}else if(array[0].equals("BEQZ")){
+			if(array[1].charAt(0)=='R')
+				temp1=array[1].split("R")[1];
+			else
+				temp1="&"+array[1].split("R")[0];
+			temp2="&"+array[2].split("R")[0];
+			temp3="-1";
+			result=temp1+" "+temp2+" "+temp3;
+		}else if(array[0].equals("HLT")){
+			result="-1 -1 -1";
+		}
+		
+		return result;
+	} 
+	
 	
 	
 	private void Instruction_Fetch(int curpc){		
@@ -310,7 +363,7 @@ public class Design {
 		System.out.println("now");
 		int tempfreeslot = RSfreeSlots;
 		int count = 0;
-		
+
 		if(curpc==-1){}
 		else{
 			int mynumb;
@@ -359,12 +412,30 @@ public class Design {
 			}
 			RSfreeSlots=simpletemp;
 			
-			if(stagepc.get(0)>0&& stall==1)
-				stagepc.set(0, stagepc.get(0)+tempfreeslot);	
-		    if(stagepc.get(1)>0&& stall==1)
-		    	stagepc.set(1, stagepc.get(1)+tempfreeslot);
-		    if(stagepc.get(2)>0&& stall==1)
-		    	stagepc.set(2, stagepc.get(2)+tempfreeslot);
+			if(stagepc.get(0)>0&& stall==1){
+				if(stagepc.get(0)+tempfreeslot>=InstructionCount)
+					stagepc.set(0, -1);	
+				else
+					stagepc.set(0, stagepc.get(0)+tempfreeslot);	
+			}
+		    if(stagepc.get(1)>0&& stall==1){
+		    	if(stagepc.get(1)+tempfreeslot>=InstructionCount)
+					stagepc.set(0, -1);	
+				else
+					stagepc.set(1, stagepc.get(1)+tempfreeslot);
+		    }
+		    	
+		    
+		    if(stagepc.get(2)>0&& stall==1){
+		        if(stagepc.get(2)+tempfreeslot>=InstructionCount)
+					stagepc.set(0, -1);	
+				else
+					stagepc.set(2, stagepc.get(2)+tempfreeslot);
+		    }
+		    	
+			
+
+		    
 		   System.out.println(stagepc);
 	
 		}
