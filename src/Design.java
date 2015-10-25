@@ -93,8 +93,9 @@ public class Design {
 	
 	private ArrayList<Integer> completeinst = new ArrayList<Integer>();
 	private ArrayList<Integer> datacache = new ArrayList<Integer>();
-	private ArrayList<String> storebuf = new ArrayList<String>();
-	
+	private HashMap<Integer,String> storebuf = new HashMap<Integer,String>();
+	private ArrayList<HashMap<Integer,String>> Cyclestorebuf = new ArrayList<HashMap<Integer,String>>();
+	private HashMap<Integer,String> tempcomplete = new HashMap<Integer,String>();
 	private int cycle;
 	private HashMap<Integer,Integer> opcodecountermap = new HashMap<Integer,Integer>();
 	private HashMap<Integer,Integer> latencymap = new HashMap<Integer,Integer>();
@@ -192,10 +193,13 @@ public class Design {
 		ArrayList<String> temp = new ArrayList<String>();
 		CycleInslist.add(temp);
 		CycleInslist.add(temp);
+
 		HashMap<Integer, String> maptemp = new HashMap<Integer,String>();
 		Cyclereorderbuffer.add(maptemp);
 		Cyclereorderbuffer.add(maptemp);
 		
+		Cyclestorebuf.add(maptemp);
+		Cyclestorebuf.add(maptemp);
 		RSfreeSlots=entrysize;
 		for (int i = 0; i < entrysize; i++) {
 			reserveinst.add(stringrs("0","-1","-1","-1","-1","-1","-1","0"));
@@ -205,9 +209,7 @@ public class Design {
 			System.out.print(i + " ");
 			////System.out.println(reserveinst.get(i));
 		}
-		for (int i = 0;i < storebuffer;i++){
-			storebuf.add("-1"+" "+"&");
-		}
+		
 		for(int i =0;i<256;i++){
 			datacache.add(1);
 		}
@@ -407,7 +409,21 @@ public class Design {
 				String previnst = reserveinst.get(Integer.parseInt(ldlabel));
 				String[] prevarr = previnst.split(" ");
 				ldresult=Integer.parseInt(prevarr[4]);
-				ldresult=datacache.get(ldresult);
+				int countnx = 0;
+				HashMap<Integer,String>  curstorebuf =new HashMap<Integer,String> ();
+				curstorebuf= Cyclestorebuf.get(0);
+				if(!curstorebuf.isEmpty()){
+					for(Integer key : curstorebuf.keySet()){
+						String str = curstorebuf.get(key);
+						String ps[] = str.split(" ");
+						if(ps[0].equals(ldlabel)){
+							countnx = 1;
+							ldresult = Integer.parseInt(ps[1]);
+						}
+					}
+				}
+				if(countnx == 0)
+					ldresult=datacache.get(ldresult);
 				int instnumb=Integer.parseInt(prevarr[1].split("->")[0]);
 				String value = ldlabel+" "+ldresult;
 				reorderbuffer.put(instnumb, value);
@@ -955,14 +971,19 @@ public class Design {
 		String completebuf="";
 		if(!Cyclereorderbuffer.get(0).isEmpty()){
 			HashMap<Integer,String>  curreorderbuf =new HashMap<Integer,String> ();
+			HashMap<Integer,String>  temppmap =new HashMap<Integer,String> ();
 			curreorderbuf= Cyclereorderbuffer.get(0);
+			temppmap.putAll(curreorderbuf);
+			temppmap.putAll(tempcomplete);
+			curreorderbuf = temppmap;
+			tempcomplete= new HashMap<Integer,String>();
 			int counnt=0;		
 			for(Integer key : curreorderbuf.keySet())
 			{
 				if(complete_stagepc == key && counnt < instpercycle){
 					counnt++;complete_stagepc++;
-					System.out.println("Complete stage");
-					System.out.println(""+DecodeInstSet.get(key));
+					//System.out.println("Complete stage");
+					//System.out.println(""+DecodeInstSet.get(key));
 
 					completebuf=completebuf+"     "+DecodeInstSet.get(key);
 					String d = curreorderbuf.get(key);
@@ -985,16 +1006,37 @@ public class Design {
 						}
 					}
 					else if(parts1.length == 3){
-							storebuf.set(Integer.parseInt(parts1[1]),parts1[1]+" "+parts1[2]);
+						
+							storebuf.put(key,parts1[1]+" "+parts1[2]);
 							reserveinst.set(Integer.parseInt(parts1[0]), "0 -1 -1 -1 -1 -1 -1 0");
 					}
+				}else if (complete_stagepc == key && counnt >= instpercycle){
+					tempcomplete.put(key, curreorderbuf.get(key));
 				}
+				
 				
 			}			
 		}	
 		lblcompletetxt.setText(completebuf);
+		Cyclestorebuf.add(storebuf);
+		Cyclestorebuf.remove(0);
 	}
-	private void Retire(int pc){}
+	private void Retire(int pc){
+		if(!Cyclestorebuf.get(0).isEmpty()){
+			HashMap<Integer,String>  curstorebuf =new HashMap<Integer,String> ();
+			curstorebuf= Cyclestorebuf.get(0);
+			Map<Integer, String> sortedMap = new TreeMap<Integer, String>(curstorebuf);
+			int counnt=0;		
+			for(Integer key : sortedMap.keySet()){
+				if(counnt < instpercycle){
+					counnt++;
+					String d = sortedMap.get(key);
+					String parts1[] = d.split(" ");	
+					datacache.set(Integer.parseInt(parts1[0]), Integer.parseInt(parts1[1]));
+				}
+			}
+		}
+	}
 	
 	
 	
