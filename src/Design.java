@@ -8,6 +8,7 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 
 import sun.awt.HorizBagLayout;
+import sun.java2d.x11.X11SurfaceDataProxy.Opaque;
 
 import java.awt.Color;
 import java.awt.Rectangle;
@@ -33,20 +34,24 @@ public class Design {
 	private int loadlatency;
 	private int storelatency;
 	private int branchlatency;
-	private int al;
-	private int ll;
-	private int ml;
-	private int sl;
-	private int bl;
-	private int a;
-	private int m;
-	private int s;
-	private int b;
-	private int l;
+
+	private int addflag=0;
+	private int mulflag=0;
+	private int ldflag=0;
+	private int sdflag=0;
+	private int brflag=0;
 	
 	private int stall;
 	
 	private int RSfreeSlots;
+	
+	private String addlabel;
+	private String mullabel;
+	private String ldlabel;
+	private String sdlabel;
+	private String brlabel;
+	
+	
 	
 	private JLabel lblIftxt;
 	private JLabel lblIdtxt;
@@ -56,6 +61,7 @@ public class Design {
 	private JButton btnQuit;
 	private JLabel lblcompletetxt;
 	private JLabel lblretiretxt;
+	
 
 	private int pc;
 	private JFrame frame;
@@ -77,7 +83,15 @@ public class Design {
 	private ArrayList<String> ArchReg = new ArrayList <String>();
 	private ArrayList<String> reserveinst = new ArrayList<String>();
 	private ArrayList <Integer> stagepc = new ArrayList<Integer>();
-	private ArrayList<String> Inslist = new ArrayList<String>();
+	
+	private ArrayList<Integer> completeinst = new ArrayList<Integer>();
+	
+	private int cycle;
+	private HashMap<Integer,Integer> opcodecountermap = new HashMap<Integer,Integer>();
+	private HashMap<Integer,Integer> latencymap = new HashMap<Integer,Integer>();
+	
+	private ArrayList<ArrayList<String>> CycleInslist = new ArrayList<ArrayList<String>>();
+	
 	private JLabel lblAdder;
 	private JLabel lblAddertxt;
 	private JLabel lblMULtxt;
@@ -134,10 +148,10 @@ public class Design {
 		br.close();
 		for (int i = 0; i < 8; i++) {
 			System.out.print(i+" ");
-        	System.out.println(ArchReg.get(i));
+        	//System.out.println(ArchReg.get(i));
 		}
 		
-		System.out.println(DecodeInstSet);
+		//System.out.println(DecodeInstSet);
 		
 		instpercycle= Integer.parseInt(values.get(0)) ;
 		entrysize=Integer.parseInt(values.get(1)) ;
@@ -148,16 +162,27 @@ public class Design {
 		loadlatency=Integer.parseInt(values.get(6)) ;
 		storelatency=Integer.parseInt(values.get(7)) ;
 		branchlatency=Integer.parseInt(values.get(8)) ;
-		al = addlatency;
-		ml = mullatency;
-		ll = loadlatency;
-		sl = storelatency;
-		bl = branchlatency;
-		a = 0;
-		m = 0;
-		l = 0;
-		s = 0;
-		b = 0;
+		cycle = 0;
+	
+		opcodecountermap.put(0, addlatency);
+		opcodecountermap.put(1, addlatency);
+		opcodecountermap.put(2, mullatency);
+		opcodecountermap.put(3, loadlatency);
+		opcodecountermap.put(4, storelatency);
+		opcodecountermap.put(5, branchlatency);
+		opcodecountermap.put(6, branchlatency);
+
+		latencymap.put(0, addlatency);
+		latencymap.put(1, addlatency);
+		latencymap.put(2, mullatency);
+		latencymap.put(3, loadlatency);
+		latencymap.put(4, storelatency);
+		latencymap.put(5, branchlatency);
+		latencymap.put(6, branchlatency);
+
+		ArrayList<String> temp = new ArrayList<String>();
+		CycleInslist.add(temp);
+		CycleInslist.add(temp);
 		
 		RSfreeSlots=entrysize;
 		for (int i = 0; i < entrysize; i++) {
@@ -166,15 +191,15 @@ public class Design {
 		for (int i = 0; i < entrysize; i++) {
 			//reserveinst.add(stringrs("0","-1","-1","-1","-1","-1","-1","0"));
 			System.out.print(i + " ");
-			System.out.println(reserveinst.get(i));
+			//System.out.println(reserveinst.get(i));
 		}
 		
 		
 		stall=0;
-		System.out.println("here it is");
-		System.out.println(GetRegNumbers("JMP 33"));
-		System.out.println(GetRegNumbers("BEQZ R9 22"));
-		System.out.println(GetRegNumbers("HLT"));
+		//System.out.println("here it is");
+		//System.out.println(GetRegNumbers("JMP 33"));
+		//System.out.println(GetRegNumbers("BEQZ R9 22"));
+		//System.out.println(GetRegNumbers("HLT"));
 		initialize();
 	}
 
@@ -208,6 +233,7 @@ public class Design {
 		return res;
 	}
 	private void mynextfunc(){
+		cycle = cycle + 1;
 		Update_the_pc();
 		Instruction_Fetch(stagepc.get(0));
 		Instruction_Decode(stagepc.get(1));
@@ -250,8 +276,67 @@ public class Design {
 			
 		}
 		
-		System.out.println(stagepc);
-		System.out.println("free slots =========>"+RSfreeSlots);
+		if(addflag == 1 && opcodecountermap.get(0)<=latencymap.get(1) ){
+			if(opcodecountermap.get(1)>1){
+				opcodecountermap.put(0, opcodecountermap.get(0)-1);
+				opcodecountermap.put(1, opcodecountermap.get(1)-1);
+			}else if(opcodecountermap.get(1)== 1){
+				
+				addflag=0;
+				opcodecountermap.put(0, latencymap.get(1));
+				opcodecountermap.put(1, latencymap.get(1));
+			}
+		}
+		
+		if(mulflag ==1 && opcodecountermap.get(2)<=latencymap.get(2)){
+			if(opcodecountermap.get(2)>1){
+				opcodecountermap.put(2, opcodecountermap.get(2)-1);
+			}else if(opcodecountermap.get(2)== 1){
+				mulflag=0;
+				opcodecountermap.put(2, latencymap.get(2));
+			}
+		}
+		
+		if(ldflag==1 && opcodecountermap.get(3)<=latencymap.get(3)){
+			
+			
+			if(opcodecountermap.get(3)>1){
+				opcodecountermap.put(3, opcodecountermap.get(3)-1);
+			}else if(opcodecountermap.get(3)== 1){
+				reserveinst.set(Integer.parseInt(ldlabel), "0 -1 -1 -1 -1 -1 -1 0");
+				busyarray.set(Integer.parseInt(ldlabel), 0);
+				ldflag=0;
+				opcodecountermap.put(3, latencymap.get(3));
+			}
+		}
+		if(sdflag==1 && opcodecountermap.get(4)<=latencymap.get(4)){
+			if(opcodecountermap.get(4)>1){
+				opcodecountermap.put(4, opcodecountermap.get(4)-1);
+			}else if(opcodecountermap.get(4)== 1){
+				sdflag=0;
+				opcodecountermap.put(4, latencymap.get(4));
+			}
+		}
+		if(brflag == 1 && opcodecountermap.get(5)<=latencymap.get(5) ){
+			if(opcodecountermap.get(5)>1){
+				opcodecountermap.put(5, opcodecountermap.get(5)-1);
+				opcodecountermap.put(6, opcodecountermap.get(6)-1);
+			}else if(opcodecountermap.get(1)== 1){
+				brflag=0;
+				opcodecountermap.put(5, latencymap.get(1));
+				opcodecountermap.put(6, latencymap.get(1));
+			}
+		}
+		
+		lblAddercounttxt.setText("   "+opcodecountermap.get(0));
+		lblMULcounttxt.setText("   "+opcodecountermap.get(2));
+		lblLoadcounttxt.setText("   "+opcodecountermap.get(3));
+		lblStorecounttxt.setText("   "+opcodecountermap.get(4));
+		lblBranchcounttxt.setText("   "+opcodecountermap.get(5));
+		
+		
+		//System.out.println(opcodecountermap);
+		
 	}
 	private String GetRegNumbers (String inst){
 		String result="";
@@ -317,7 +402,7 @@ public class Design {
 				}
 			}
 		}
-		System.out.println(temp);
+		//System.out.println(temp);
 		lblIftxt.setText(temp);
 	}
 	private void Instruction_Decode(int curpc){
@@ -335,11 +420,11 @@ public class Design {
 				}
 			}
 		}
-		System.out.println(temp);
+		//System.out.println(temp);
 		lblIdtxt.setText(temp);
 	}	
 	private void Read(int curpc){
-		System.out.println(pc);
+		//System.out.println(pc);
 		if(curpc==-1){
 			lblRdtxt.setText("");
 		}else{
@@ -362,12 +447,23 @@ public class Design {
 				int numb=instpercycle-RSfreeSlots;
 				String[] array = temp.split("    ");
 				String newtemp="";
-			    for(int i=0;i<RSfreeSlots;i++){					
-					if(i!=0)
-						newtemp=newtemp+"    "+array[i];
-					else{
-						newtemp=newtemp+array[i];
-					}			    	
+				System.out.println("RSFree"+RSfreeSlots);
+				System.out.println("Array lengh"+array.length);
+				/*int inttemp;
+				if(array.length<RSfreeSlots)
+					inttemp=array.length;
+				else
+					inttemp= RSfreeSlots;
+				*/
+				
+			    for(int i=0;i<RSfreeSlots;i++){		
+			    	/*if(i>array.length){*/
+						if(i!=0)
+							newtemp=newtemp+"    "+array[i];
+						else{
+							newtemp=newtemp+array[i];
+						}	
+			    	/*}*/
 			    }
 			    lblRdtxt.setText("Buffer:"+temp+"Dispatching "+newtemp);    
 			    
@@ -440,12 +536,23 @@ public class Design {
 		return parts[2];
 	}
 	private void AddtoInslist(){
+		ArrayList<String> Inslist = new ArrayList<String>();
+		
 		for (int i = 0; i < reserveinst.size(); i++) {
 			String parts[] = reserveinst.get(i).split(" ");
+			
+			
 			if(parts[parts.length-1].equals("1")){
+				System.out.println(reserveinst.get(i));
+				String[] array =reserveinst.get(i).split(" ");
+				String[] smarray =array[1].split("->");
+				if(!completeinst.contains(Integer.parseInt(smarray[0])))
 				Inslist.add(i+" "+reserveinst.get(i));
 			}
+			
 		}
+		CycleInslist.add(Inslist);
+		CycleInslist.remove(0);
 	}
 	private void set_reservstation(int opcode,String instnumb,int index,String s0,String s1,String s2){
 		if((opcode == 0)||(opcode == 1)||(opcode == 2)){
@@ -513,6 +620,8 @@ public class Design {
 			else if((flag0 == 0)&&(flag1 == 1)){
 				String c0 = get_data(S0);
 				String c1 = get_tag(S1);
+				System.out.println("Entered");
+				System.out.println(c0 + " " + c1);
 				reserveinst.set(index,stringrs("1",instnumb+"->"+Integer.toString(opcode),"&","-1",c0,c1,"&","0"));
 			}
 			else if((flag0 == 1)&&(flag1 == 1)){
@@ -546,7 +655,6 @@ public class Design {
 		}
 	}
 	private void Reservation_Station(int curpc){
-		System.out.println("now");
 		int tempfreeslot = RSfreeSlots;
 		int count = 0;
 
@@ -555,48 +663,39 @@ public class Design {
 			int mynumb;
 			
 			if(RSfreeSlots>instpercycle){
-				System.out.println("shir");
 				mynumb=instpercycle;
 			}else{
 				mynumb=RSfreeSlots;
 			}
-			System.out.println(RSfreeSlots);
+			System.out.println("curpcc "+curpc);
 			ArrayList<String> smalllist = new ArrayList<String>();
-			System.out.println("-------------------------------"+DecodeInstSet.get(4));
 			for(int i=0;i<mynumb;i++){
 				int temp=curpc+i;
-				/*smalllist.add(temp+" "+DecodeInstSet.get(curpc+i));*/
 				smalllist.add(DecodeInstSet.get(curpc+i)+" "+temp);
 				count = count + 1;
-				System.out.println(i);
 			}
-			System.out.println("****************");
 			System.out.println(smalllist);
-			System.out.println(curpc);
+			
+			
+			
+			for(int i=0;i<entrysize;i++){
+				if(busyarray.get(i)==0){
+					
+				}
+			}
+			
+			
+			
+			
+			
 			for (int i = 0; i < count; i++) {
-				System.out.println(smalllist.get(i));
 				String s = smalllist.get(i);
 				String[] parts1 = s.split(" ");
-				//System.out.println(parts[0]);
 				int opcode = getnumberop(parts1[0]);
-				//System.out.println( getnumberop(parts[0]));
-				System.out.println("00000000000000");
-				System.out.println(GetRegNumbers(s));
 				String[] parts2 = GetRegNumbers(s).split(" ");
-				System.out.println(parts2[0] + " " + parts2[1] + " " + parts2[2]);
 				set_reservstation(opcode,parts1[parts1.length-1],curpc+i,parts2[0],parts2[1],parts2[2]);
 				set_archregisters(opcode,curpc+i,parts2[0],parts2[1]);
-				System.out.println("Changed Arch registers");
-				for (int j = 0; j < 8; j++) {
-					System.out.println(ArchReg.get(j));
-				}
-				System.out.println("((((((((((((()))))))))))))");
-				System.out.println(Inslist.isEmpty());
-				
-			
-				//reserveinst.set(curpc+i, stringrs("1","-1","-1","-1","-1","-1","-1","0"));
 			}
-			AddtoInslist();
 			for(int i=0;i<8;i++){
 				String tempo =ArchReg.get(i);
 				String[] tempoarray = tempo.split(" ");
@@ -617,7 +716,6 @@ public class Design {
 				busyarray.set(j,Integer.parseInt(first));
 				busylabelmaker.get(j).setText("   "+first);
 				
-				System.out.println(reserveinst.get(j));
 			}
 
 			
@@ -653,7 +751,6 @@ public class Design {
 			
 
 		    
-		   System.out.println(stagepc);
 	
 		}
 	}
@@ -661,41 +758,65 @@ public class Design {
 
 	
 	private void Execute(){
-		if(!Inslist.isEmpty()){
+		AddtoInslist();
+		System.out.println(CycleInslist);
+		if(!CycleInslist.get(0).isEmpty()){
 			HashMap <Integer,String> localmap = new HashMap<Integer,String>();
-			for(int i=0;i<Inslist.size();i++){
-				String tempp = Inslist.get(i);
+			for(int i=0;i<CycleInslist.get(0).size();i++){
+				String tempp = CycleInslist.get(0).get(i);
 				String[] tempparray = tempp.split(" ");
 				String[] arrowsplit = tempparray[2].split("->");
 				int key = Integer.parseInt(arrowsplit[0]);
 				String value = tempparray[0]+" "+arrowsplit[1]+" "+tempparray[3]+" "+tempparray[4]+" "+tempparray[5]+" "+tempparray[6]+" "+tempparray[7];
 				localmap.put(key, value);
 			}
-			System.out.println(localmap);
+			System.out.println("before"+localmap);
 			Map<Integer, String> sortedMap = new TreeMap<Integer, String>(localmap);
+			System.out.println("After"+sortedMap);
 			for(Integer key : sortedMap.keySet()){
+				System.out.println("-------------------------------------------->"+key);
 				String s = sortedMap.get(key);
-				executeop(s);
-			}
-			//System.out.println(sortedMap.size());	
-		}
-	}
-	private void executeop(String s){
-		String parts[] = s.split(" ");
-		if((parts[1].equals("0"))&&(a == 0)){
-			if(al > 0){
-				al = al -1;
-				if(al == 0){
-					int temp1 = Integer.parseInt(parts[4]);
-					int temp2 = Integer.parseInt(parts[6]);
-					int result = temp1 + temp2;
-					set_reservstation(0, instnumb, index, s0, s1, s2)
-					a = 0;
-					al = addlatency;
+				String[] sarray = s.split(" ");
+				int size = sarray.length;
+					int reqnumb = Integer.parseInt(sarray[1]);
+					if (opcodecountermap.get(reqnumb) == latencymap.get(reqnumb)){
+						if((reqnumb==0 ||reqnumb==1) &&(addflag == 0)){
+							
+							lblAddertxt.setText(DecodeInstSet.get(key));
+							addlabel=sarray[0];
+							addflag=1;
+							completeinst.add(key);
+						}
+						else if((reqnumb==2) && (mulflag == 0)){
+							lblMULtxt.setText(DecodeInstSet.get(key));
+							mulflag=1;
+							completeinst.add(key);
+							mullabel=sarray[0];
+						}
+						else if((reqnumb==3) && (ldflag == 0)){
+							lblLoadtxt.setText(DecodeInstSet.get(key));
+							ldflag=1;
+							completeinst.add(key);
+							ldlabel=sarray[0];
+						}
+						else if((reqnumb==4) && (sdflag == 0)){
+							lblStoretxt.setText(DecodeInstSet.get(key));
+							sdflag=1;
+							sdlabel=sarray[0];
+							completeinst.add(key);
+						}
+						else if((reqnumb==5 ||reqnumb==6)&&(brflag == 0) ){
+							lblBranchtxt.setText(DecodeInstSet.get(key));
+							brflag=1;
+							brlabel=sarray[0];
+							completeinst.add(key);
+						}
+					}
 				}
-			}
+				
 		}
 	}
+	
 	private void Complete(int pc){}
 	private void Retire(int pc){}
 	
