@@ -24,7 +24,7 @@ import java.math.BigInteger;
 
 public class Design {
 	
-	
+	private int complete_stagepc=0;
 	private int instpercycle;
 	private int entrysize;
 	private int reorderbuffersize;
@@ -76,7 +76,7 @@ public class Design {
 	private JLabel lblReservationStation;
 	
 	private HashMap<Integer,String> reorderbuffer=new HashMap<Integer,String>();
-	
+	private ArrayList<HashMap<Integer,String>> Cyclereorderbuffer=new ArrayList<HashMap<Integer,String>>();
 	private int addresult;
 	private int mulresult;
 	private int ldresult;
@@ -192,6 +192,9 @@ public class Design {
 		ArrayList<String> temp = new ArrayList<String>();
 		CycleInslist.add(temp);
 		CycleInslist.add(temp);
+		HashMap<Integer, String> maptemp = new HashMap<Integer,String>();
+		Cyclereorderbuffer.add(maptemp);
+		Cyclereorderbuffer.add(maptemp);
 		
 		RSfreeSlots=entrysize;
 		for (int i = 0; i < entrysize; i++) {
@@ -254,7 +257,7 @@ public class Design {
 		Read(stagepc.get(2));
 		Reservation_Station(stagepc.get(2));
 		Execute();
-		Complete(stagepc.get(4));
+		Complete();
 		Retire(stagepc.get(5));
 	}
 	private void myfunc(){
@@ -447,8 +450,9 @@ public class Design {
 				String previnst = reserveinst.get(Integer.parseInt(sdlabel));
 				String[] prevarr = previnst.split(" ");
 				int instnumb=Integer.parseInt(prevarr[1].split("->")[0]);
-				String value= "S "+prevarr[4]+" "+prevarr[6];
+				String value= sdlabel+" "+prevarr[4]+" "+prevarr[6];
 				reorderbuffer.put(instnumb, value);
+				lblStoretxt.setText("");
 				
 				sdflag=0;
 				opcodecountermap.put(4, latencymap.get(4));
@@ -943,9 +947,53 @@ public class Design {
 				}
 				
 		}
+		Cyclereorderbuffer.add(reorderbuffer);
+		Cyclereorderbuffer.remove(0);
 	}
 	
-	private void Complete(int pc){}
+	private void Complete(){
+		String completebuf="";
+		if(!Cyclereorderbuffer.get(0).isEmpty()){
+			HashMap<Integer,String>  curreorderbuf =new HashMap<Integer,String> ();
+			curreorderbuf= Cyclereorderbuffer.get(0);
+			int counnt=0;		
+			for(Integer key : curreorderbuf.keySet())
+			{
+				if(complete_stagepc == key && counnt < instpercycle){
+					counnt++;complete_stagepc++;
+					System.out.println("Complete stage");
+					System.out.println(""+DecodeInstSet.get(key));
+
+					completebuf=completebuf+"     "+DecodeInstSet.get(key);
+					String d = curreorderbuf.get(key);
+					String parts1[] = d.split(" ");
+					if(parts1.length == 2){
+						for (int i = 0; i < 8; i++) {
+							System.out.println("reorder tag" + parts1[0]);
+							String s = ArchReg.get(i);
+							String parts[] = s.split(" ");
+							System.out.println("register tag" + parts[1]);
+							if(parts1[0].equals(parts[1])){
+								ArchReg.set(i,0+" "+"-1"+" "+parts1[1]);
+							}
+						}
+						for(int i=0;i<8;i++){
+							String tempo =ArchReg.get(i);
+							String[] tempoarray = tempo.split(" ");
+							String finalstring = "        "+tempoarray[0]+"        "+tempoarray[1]+"        "+tempoarray[2];
+							registerlabelmaker.get(i).setText(finalstring);
+						}
+					}
+					else if(parts1.length == 3){
+							storebuf.set(Integer.parseInt(parts1[1]),parts1[1]+" "+parts1[2]);
+							reserveinst.set(Integer.parseInt(parts1[0]), "0 -1 -1 -1 -1 -1 -1 0");
+					}
+				}
+				
+			}			
+		}	
+		lblcompletetxt.setText(completebuf);
+	}
 	private void Retire(int pc){}
 	
 	
