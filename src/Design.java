@@ -62,6 +62,7 @@ public class Design {
 	private int InstructionCount;
 	private ArrayList<String> InstructionSet  = new ArrayList <String>();
 	private ArrayList<String> DecodeInstSet = new ArrayList <String>();
+	private ArrayList<String> ArchReg = new ArrayList <String>();
 	private ArrayList<String> reserveinst = new ArrayList<String>();
 	private ArrayList <Integer> stagepc = new ArrayList<Integer>();
 
@@ -97,6 +98,9 @@ public class Design {
 		InstructionCount=0;
 		br = new BufferedReader(new FileReader("src/Pr_test1.b"));		
         line =  null;
+        for (int i = 0; i < 8; i++) {
+        	ArchReg.add(stringarf("0","-1","0"));
+		}
 		while((line=br.readLine())!=null){
 		   InstructionSet.add(line);
 		   decode idinst = new decode(line);
@@ -105,6 +109,10 @@ public class Design {
 		   InstructionCount++;
 		}
 		br.close();
+		for (int i = 0; i < 8; i++) {
+			System.out.print(i+" ");
+        	System.out.println(ArchReg.get(i));
+		}
 		
 		System.out.println(DecodeInstSet);
 		
@@ -119,6 +127,14 @@ public class Design {
 		branchlatency=Integer.parseInt(values.get(8)) ;
 		
 		RSfreeSlots=entrysize;
+		for (int i = 0; i < entrysize; i++) {
+			reserveinst.add(stringrs("0","-1","-1","-1","-1","-1","-1","0"));
+		}
+		for (int i = 0; i < entrysize; i++) {
+			//reserveinst.add(stringrs("0","-1","-1","-1","-1","-1","-1","0"));
+			System.out.print(i + " ");
+			System.out.println(reserveinst.get(i));
+		}
 		
 		
 		stall=0;
@@ -129,6 +145,33 @@ public class Design {
 	 * Initialize the contents of the frame.
 	 */
 	
+	public static String stringarf(String busy,String tag,String data){
+		String res = busy;
+		res = res.concat(" ");
+		res = res.concat(tag);
+		res = res.concat(" ");
+		res = res.concat(data);
+		return res;
+	}
+	
+	public static String stringrs(String busy,String opcode,String dest,String tag1,String s1,String tag2,String s2,String ready){
+		String res = busy;
+		res = res.concat(" ");
+		res = res.concat(opcode);
+		res = res.concat(" ");
+		res = res.concat(dest);
+		res = res.concat(" ");
+		res = res.concat(tag1);
+		res = res.concat(" ");
+		res = res.concat(s1);
+		res = res.concat(" ");
+		res = res.concat(tag2);
+		res = res.concat(" ");
+		res = res.concat(s2);
+		res = res.concat(" ");
+		res = res.concat(ready);
+		return res;
+	}
 	
 	private void mynextfunc(){
 		Update_the_pc();
@@ -266,6 +309,7 @@ public class Design {
 	private void Reservation_Station(int curpc){
 		System.out.println("now");
 		int tempfreeslot = RSfreeSlots;
+		int count = 0;
 		
 		if(curpc==-1){}
 		else{
@@ -282,9 +326,19 @@ public class Design {
 			System.out.println("-------------------------------"+DecodeInstSet.get(4));
 			for(int i=0;i<mynumb;i++){
 				smalllist.add(DecodeInstSet.get(curpc+i));
+				count = count + 1;
 				System.out.println(i);
 			}
+			System.out.println("****************");
 			System.out.println(smalllist);
+			System.out.println(curpc);
+			for (int i = 0; i < count; i++) {
+				System.out.println(smalllist.get(i));
+				String s = smalllist.get(i);
+				String[] parts = s.split(" ");
+				reserveinst.set(curpc+i, stringrs("1","-1","-1","-1","-1","-1","-1","0"));
+			}
+			System.out.println("****************");
 			for(int i=0;i<entrysize;i++){
 				if(smalllist.size()>0){
 					if(busyarray.get(i)==0){
