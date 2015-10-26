@@ -66,6 +66,7 @@ public class Design {
 
 	private int pc;
 	private JFrame frame;
+	private String BufferJmpString="";
 	
 	private ArrayList<JLabel> reslabelmaker = new ArrayList<JLabel> ();
 	private ArrayList<JLabel> busylabelmaker = new ArrayList<JLabel> ();
@@ -75,6 +76,8 @@ public class Design {
 	private ArrayList<Integer> busyarray = new ArrayList<Integer>();
 	private ArrayList<Integer> validarray = new ArrayList<Integer>();
 	private JLabel lblReservationStation;
+	
+	private ArrayList<Integer> inst_inRS = new ArrayList<Integer>();
 	
 	private HashMap<Integer,String> reorderbuffer=new HashMap<Integer,String>();
 	private ArrayList<HashMap<Integer,String>> Cyclereorderbuffer=new ArrayList<HashMap<Integer,String>>();
@@ -288,23 +291,28 @@ public class Design {
 			}
 		}
 		RSfreeSlots=simpletemp;
-		
-		
-		
-		if(RSfreeSlots>instpercycle)
-			stall=0;
-		if(stall==0){
-			stagepc.remove(stagepc.size()-1);
-			if(pc<InstructionCount){
-				stagepc.add(0,pc);
-				pc=pc+instpercycle;
+		if(jmpflag==1){
+			jmpflag=0;
+			stagepc.set(0, Integer.parseInt(BufferJmpString.split(" ")[0]));
+			stagepc.set(1, Integer.parseInt(BufferJmpString.split(" ")[1]));
+			stagepc.set(2, Integer.parseInt(BufferJmpString.split(" ")[2]));
+			
+		}else{		
+			if(RSfreeSlots>instpercycle)
+				stall=0;
+			if(stall==0){
+				stagepc.remove(stagepc.size()-1);
+				if(pc<InstructionCount){
+					stagepc.add(0,pc);
+					pc=pc+instpercycle;
+				}
+				else{
+					stagepc.add(0,-1);
+				}	
 			}
 			else{
-				stagepc.add(0,-1);
-			}	
-		}
-		else{
-			
+				
+			}
 		}
 		
 		if(addflag == 1 && opcodecountermap.get(0)<=latencymap.get(1) ){
@@ -575,8 +583,14 @@ public class Design {
 					insttemp=DecodeInstSet.get(curpc+i);
 					
 					if(DecodeInstSet.get(curpc+i).split(" ")[0].equals("JMP")){
+						
 						jmpflag=1;
 						tempjmpflag=1;
+						int stage1 = curpc+i+Integer.parseInt(DecodeInstSet.get(curpc+i).split(" ")[1]);
+						int stage2 = -1;
+						int stage3 = curpc+i-instpercycle;
+						
+						BufferJmpString=""+stage1+" "+stage2+" "+stage3;
 						System.out.println(stagepc);
 					}
 				}
@@ -603,9 +617,10 @@ public class Design {
 			
 			for(int i=0;i<instpercycle;i++){
 				String insttemp="";			
-				if (curpc+i < InstructionCount )
+				if (curpc+i < InstructionCount ){
+					if(!inst_inRS.contains(curpc+i))
 					insttemp=DecodeInstSet.get(curpc+i);
-				
+				}
 				if(i!=0)
 					temp=temp+"    "+insttemp;
 				else{
@@ -841,8 +856,10 @@ public class Design {
 			for(int i=0;i<mynumb;i++){
 				int temp=curpc+i;
 				if(temp<InstructionCount){
-					smalllist.add(DecodeInstSet.get(curpc+i)+" "+temp);
-					count = count + 1;
+					if(!inst_inRS.contains(curpc+i)){
+						smalllist.add(DecodeInstSet.get(curpc+i)+" "+temp);
+						count = count + 1;
+					}
 				}
 			}
 			System.out.println("------------------------------------->"+mynumb);
@@ -855,6 +872,7 @@ public class Design {
 					String[] parts1 = s.split(" ");
 					int opcode = getnumberop(parts1[0]);
 					String[] parts2 = GetRegNumbers(s).split(" ");
+					inst_inRS.add(Integer.parseInt(parts1[parts1.length-1]));
 					set_reservstation(opcode,parts1[parts1.length-1],i,parts2[0],parts2[1],parts2[2]);
 					set_archregisters(opcode,i,parts2[0],parts2[1]);
 					smalllist.remove(0);
@@ -991,14 +1009,23 @@ public class Design {
 			temppmap.putAll(tempcomplete);
 			curreorderbuf = temppmap;
 			tempcomplete= new HashMap<Integer,String>();
-			int counnt=0;		
+			int counnt=0;	
+			
+			
+			
+			
+			
 			for(Integer key : curreorderbuf.keySet())
 			{
+				if(DecodeInstSet.get(complete_stagepc).split(" ")[0].equals("JMP")){
+					complete_stagepc=complete_stagepc+Integer.parseInt(DecodeInstSet.get(complete_stagepc).split(" ")[1]);
+				}
+				
 				if(complete_stagepc == key && counnt < instpercycle){
-					counnt++;complete_stagepc++;
-					//System.out.println("Complete stage");
-					//System.out.println(""+DecodeInstSet.get(key));
-
+					
+					counnt++;
+					complete_stagepc++;
+					
 					completebuf=completebuf+"     "+DecodeInstSet.get(key);
 					String d = curreorderbuf.get(key);
 					String parts1[] = d.split(" ");
