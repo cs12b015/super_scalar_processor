@@ -34,7 +34,8 @@ public class Design {
 	private int loadlatency;
 	private int storelatency;
 	private int branchlatency;
-
+	private int jmpflag=0;
+	
 	private int addflag=0;
 	private int mulflag=0;
 	private int ldflag=0;
@@ -143,7 +144,7 @@ public class Design {
 		br.close();
 		
 		InstructionCount=0;
-		br = new BufferedReader(new FileReader("src/Pr_test1.b"));		
+		br = new BufferedReader(new FileReader("src/test3.b"));		
         line =  null;
          for (int i = 0; i < 8; i++) {
         	ArchReg.add(stringarf("0","-1","0"));
@@ -263,7 +264,8 @@ public class Design {
 		Retire(stagepc.get(5));
 	}
 	private void myfunc(){
-		
+		System.out.println(DecodeInstSet);
+		System.out.println(InstructionSet);
 		for(int i=0;i<entrysize;i++){
 			busyarray.add(0);
 			busylabelmaker.get(i).setText(" 0 ");
@@ -372,7 +374,7 @@ public class Design {
 				reorderbuffer.put(instnumb, value);	
 				reserveinst.set(Integer.parseInt(mullabel), "0 -1 -1 -1 -1 -1 -1 0");
 				busyarray.set(Integer.parseInt(mullabel), 0);
-				lblAddertxt.setText("");
+				lblMULtxt.setText("");
 				
 				
 				for(int i=0;i<entrysize;i++){
@@ -564,17 +566,27 @@ public class Design {
 	}
 	private void Instruction_Decode(int curpc){
 		String temp="";
+		int tempjmpflag=0;
 		if(curpc!=-1){			
 			for(int i=0;i<instpercycle;i++){
+				
 				String insttemp="";			
-				if (curpc+i < InstructionCount )
+				if (curpc+i < InstructionCount && tempjmpflag==0){
 					insttemp=DecodeInstSet.get(curpc+i);
+					
+					if(DecodeInstSet.get(curpc+i).split(" ")[0].equals("JMP")){
+						jmpflag=1;
+						tempjmpflag=1;
+						System.out.println(stagepc);
+					}
+				}
 				
 				if(i!=0)
 					temp=temp+"    "+insttemp;
 				else{
 					temp=temp+insttemp;
 				}
+				
 			}
 		}
 		////System.out.println(temp);
@@ -612,13 +624,13 @@ public class Design {
 			
 				
 			    for(int i=0;i<RSfreeSlots;i++){		
-			    	/*if(i>array.length){*/
+			    	if(curpc+i < InstructionCount){
 						if(i!=0)
 							newtemp=newtemp+"    "+array[i];
 						else{
 							newtemp=newtemp+array[i];
 						}	
-			    	/*}*/
+			    	}
 			    }
 			    lblRdtxt.setText("Buffer:"+temp+"Dispatching "+newtemp);    
 			    
@@ -828,13 +840,15 @@ public class Design {
 			ArrayList<String> smalllist = new ArrayList<String>();
 			for(int i=0;i<mynumb;i++){
 				int temp=curpc+i;
-				smalllist.add(DecodeInstSet.get(curpc+i)+" "+temp);
-				count = count + 1;
+				if(temp<InstructionCount){
+					smalllist.add(DecodeInstSet.get(curpc+i)+" "+temp);
+					count = count + 1;
+				}
 			}
-			
+			System.out.println("------------------------------------->"+mynumb);
 			int cnt=0;
 			
-			for(int i=0;i<entrysize&&cnt<mynumb;i++){
+			for(int i=0;i<entrysize&&cnt<count;i++){
 				if(busyarray.get(i)==0){
 					cnt++;
 					String s = smalllist.get(0);
