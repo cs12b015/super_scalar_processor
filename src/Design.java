@@ -42,6 +42,7 @@ public class Design {
 	private int ldflag=0;
 	private int sdflag=0;
 	private int brflag=0;
+	//private int countna=999999;
 	
 	private int stall;
 	
@@ -76,6 +77,7 @@ public class Design {
 	private ArrayList<Integer> resarray = new ArrayList<Integer>();
 	private ArrayList<Integer> busyarray = new ArrayList<Integer>();
 	private ArrayList<Integer> validarray = new ArrayList<Integer>();
+	private ArrayList<Integer> countna = new ArrayList<Integer>();
 	private JLabel lblReservationStation;
 	
 	private ArrayList<Integer> inst_inRS = new ArrayList<Integer>();
@@ -139,7 +141,7 @@ public class Design {
 	 * @throws IOException 
 	 */
 	public Design() throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader("src/input.txt"));		
+		BufferedReader br = new BufferedReader(new FileReader("src/pr_test1.b"));		
         String line =  null;
         ArrayList<String> values=new ArrayList<String>();
 		while((line=br.readLine())!=null){   
@@ -162,7 +164,7 @@ public class Design {
 		}
 		br.close();
 		for (int i = 0; i < 8; i++) {
-			System.out.print(i+" ");
+			//System.out.print(i+" ");
         	////////System.out.println(ArchReg.get(i));
 		}
 		
@@ -335,6 +337,7 @@ public class Design {
 				int instnumb=Integer.parseInt(prevarr[1].split("->")[0]);			
 				if(prevarr[1].split("->")[1].equals("0")){
 					addresult=data1+data2;
+					//System.out.println("add"+)
 				}else{
 					addresult=data1-data2;
 				}
@@ -483,6 +486,7 @@ public class Design {
 				//////System.out.println("----------------------------------------------------------->"+ldlabel);
 				String previnst = reserveinst.get(Integer.parseInt(ldlabel));
 				String[] prevarr = previnst.split(" ");
+				System.out.println("&&&&&&&&&&&&&"+prevarr[6]);
 				ldresult=Integer.parseInt(prevarr[6]);
 				
 				int instnumb=Integer.parseInt(prevarr[1].split("->")[0]);
@@ -1078,6 +1082,7 @@ public class Design {
 							ldlabel=sarray[0];
 						}
 						else if((reqnumb==4) && (sdflag == 0)){
+							System.out.println("PPPPPP");
 							lblStoretxt.setText(DecodeInstSet.get(key));
 							sdflag=1;
 							sdlabel=sarray[0];
@@ -1100,29 +1105,32 @@ public class Design {
 	private void Complete(){
 		String completebuf="";
 		if(!Cyclereorderbuffer.get(0).isEmpty()){
+			System.out.println("Cyclereorderbuffer"+Cyclereorderbuffer);
 			HashMap<Integer,String>  curreorderbuf =new HashMap<Integer,String> ();
 			HashMap<Integer,String>  temppmap =new HashMap<Integer,String> ();
 			curreorderbuf= Cyclereorderbuffer.get(0);
 			temppmap.putAll(curreorderbuf);
 			temppmap.putAll(tempcomplete);
 			curreorderbuf = temppmap;
+			Map<Integer, String> sortedMap = new TreeMap<Integer, String>(curreorderbuf);
 			tempcomplete= new HashMap<Integer,String>();
 			int counnt=0;	
-			for(Integer key : curreorderbuf.keySet())
+			for(Integer key : sortedMap.keySet())
 			{
 				if(DecodeInstSet.get(complete_stagepc).split(" ")[0].equals("JMP")){
 					complete_stagepc=complete_stagepc+Integer.parseInt(DecodeInstSet.get(complete_stagepc).split(" ")[1]);
 				}
-				
+				String d = curreorderbuf.get(key);
+				//System.out.println("This is string"+d);
+				String parts1[] = d.split(" ");
+				System.out.println("in iteration "+ countna);
 				if(complete_stagepc == key && counnt < instpercycle){
 					
 					counnt++;
 					complete_stagepc++;
 					////System.out.println("--------------------------------------------------------------------------------------------------------");
 					completebuf=completebuf+"     "+DecodeInstSet.get(key);
-					String d = curreorderbuf.get(key);
-					//System.out.println("This is string"+d);
-					String parts1[] = d.split(" ");
+					//curreorderbuf.remove(key);
 					if(parts1.length == 4){		
 						String regtag = parts1[0];
 						String regdata = parts1[1];
@@ -1143,14 +1151,6 @@ public class Design {
 						}
 					}
 					else if(parts1.length == 3){
-							//String f = curreorderbuf.get(key);
-							//String strinst =storebuf.get(key);
-							//String[] strinstarray = strinst.split(" ");
-							//String datainst = datacache.get(Integer.parseInt(strinstarray[1]));
-							//if(datainst.split(" ")[1].equals(strinstarray[0])){
-								//datacache.set(Integer.parseInt(strinstarray[1]), "0 -1 "+strinstarray[2]);
-							//}
-						System.out.println("----------------------------------------------------------------------------------------");
 						for(int i=0;i<entrysize;i++){
 							String curinst= reserveinst.get(i);
 							String[] curarray = curinst.split(" ");
@@ -1159,7 +1159,7 @@ public class Design {
 							if(Integer.parseInt(curarray[0])==1){
 								String Temp  = datacache.get(Integer.parseInt(parts1[1]));
 								String par[] = Temp.split(" ");
-								System.out.println(tag2+"---------------------"+par[1]);
+								//System.out.println(tag2+"---------------------"+par[1]);
 								if(tag2 == Integer.parseInt(par[1])){
 									//System.out.println();
 									if(par[0].equals("1")){
@@ -1180,13 +1180,30 @@ public class Design {
 							
 								
 						}
-						System.out.println("----------------------------------------------------------------------------------------");
-
-							/*	if (tag1==Integer.parseInt(parts1[0])){
+							storebuf.put(key,parts1[1]+" "+parts1[2]);
+							reserveinst.set(Integer.parseInt(parts1[0]), "0 -1 -1 -1 -1 -1 -1 0");
+					}
+					////System.out.println("--------------------------------------------------------------------------------------------------------");
+					
+				}else if (complete_stagepc == key && counnt >= instpercycle){
+					tempcomplete.put(key, curreorderbuf.get(key));
+				}
+				else if (complete_stagepc < key && !(countna.contains(key))){
+					countna.add(key) ;
+					System.out.println("Countna"+countna);
+					System.out.println("CompleteStagePC :"+complete_stagepc+"key:"+key);
+					if(parts1.length == 4){				
+						for(int i=0;i<entrysize;i++){
+							String curinst= reserveinst.get(i);
+							String[] curarray = curinst.split(" ");
+							int tag1 = Integer.parseInt(curarray[3]);
+							int tag2 = Integer.parseInt(curarray[5]);
+							if(Integer.parseInt(curarray[0])==1){
+								if (tag1==Integer.parseInt(parts1[0])){
 									if(curarray[1].split("->")[1].equals("3")){
-										String Temp = datacache.get(parts1[1]);
+										String Temp = datacache.get(Integer.parseInt(parts1[1]));
 										if(Temp.split(" ")[0].equals("1") && Temp.split(" ")[1].equals(parts1[0])){
-											curarray[6]=""+parts1[2];
+											curarray[6]=""+parts1[1];
 											curarray[5]="-1";
 											curarray[7]="1";
 										}
@@ -1197,13 +1214,13 @@ public class Design {
 										}
 									}
 									curarray[4]=""+parts1[1];
-									curarray[3]="-1";		
+									curarray[3]="-1";
 								}
 								if(tag2==Integer.parseInt(parts1[0])){
 									if(curarray[1].split("->")[1].equals("3")){
-										String Temp = datacache.get(parts1[1]);
+										String Temp = datacache.get(Integer.parseInt(parts1[1]));
 										if(Temp.split(" ")[0].equals("1") && Temp.split(" ")[1].equals(parts1[0])){
-											curarray[6]=""+parts1[2];
+											curarray[6]=""+parts1[1];
 											curarray[5]="-1";
 											curarray[7]="1";
 										}
@@ -1214,7 +1231,7 @@ public class Design {
 										}
 									}
 									else{
-										curarray[6]=""+parts1[2];
+										curarray[6]=""+parts1[1];
 										curarray[5]="-1";
 									}
 								}
@@ -1224,14 +1241,9 @@ public class Design {
 								String madeinst=curarray[0]+" "+curarray[1]+" "+curarray[2]+" "+curarray[3]+" "+curarray[4]+" "+curarray[5]+" "+curarray[6]+" "+curarray[7];
 								reserveinst.set(i, madeinst);
 							}
-						}*/
-							storebuf.put(key,parts1[1]+" "+parts1[2]);
-							reserveinst.set(Integer.parseInt(parts1[0]), "0 -1 -1 -1 -1 -1 -1 0");
+							
+						}
 					}
-					////System.out.println("--------------------------------------------------------------------------------------------------------");
-					
-				}else if (complete_stagepc == key && counnt >= instpercycle){
-					tempcomplete.put(key, curreorderbuf.get(key));
 				}
 				
 				
@@ -1258,6 +1270,7 @@ public class Design {
 					counnt++;
 					lblretiretxt.setText(DecodeInstSet.get(key));
 					String d = sortedMap.get(key);
+					System.out.println("********"+d);
 					String parts1[] = d.split(" ");	
 					if(Integer.parseInt(parts1[0])<0){
 						
